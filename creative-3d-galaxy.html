@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmic Code Explorer - 3D Galaxy Coding Practice</title>
+<style>
+:root {
+  --bg: #000010;
+  --panel-bg: rgba(5,5,25,0.95);
+  --text: #e0e0ff;
+  --accent: #7b68ee;
+  --easy: #4ade80;
+  --medium: #fbbf24;
+  --hard: #f87171;
+  --glow-easy: rgba(74,222,128,0.6);
+  --glow-medium: rgba(251,191,36,0.6);
+  --glow-hard: rgba(248,113,113,0.6);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  overflow: hidden;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+canvas { display:block; position:fixed; top:0; left:0; z-index:1; }
+
+/* Star cursor */
+#cursor-glow {
+  position: fixed; pointer-events: none; z-index: 10;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,104,238,0.4) 0%, transparent 70%);
+  transform: translate(-50%,-50%);
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+/* Floating label */
+.planet-label {
+  position: fixed; z-index: 5;
+  pointer-events: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+  transform: translate(-50%,-50%);
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.planet-label.visible { opacity: 1; }
+
+/* Problem overlay */
+#overlay {
+  position: fixed; z-index: 100;
+  bottom: 0; left: 0; right: 0;
+  height: 55vh;
+  background: var(--panel-bg);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(123,104,238,0.4);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 60px rgba(123,104,238,0.3);
+  transform: translateY(100%);
+  transition: transform 0.5s cubic-bezier(0.22,0.61,0.36,1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#overlay.open { transform: translateY(0); }
+
+#overlay-handle {
+  width: 40px; height: 4px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+
+#overlay-header {
+  padding: 16px 28px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+#overlay-header .left { display:flex; align-items:center; gap:12px; }
+#overlay-number {
+  font-size: 14px; color: var(--accent);
+  font-weight: 700; letter-spacing: 0.1em;
+  background: rgba(123,104,238,0.15);
+  padding: 4px 12px; border-radius: 20px;
+}
+#overlay-title {
+  font-size: 22px; color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 20px rgba(123,104,238,0.5);
+}
+#overlay-difficulty {
+  font-size: 12px; font-weight: 700;
+  padding: 4px 14px; border-radius: 20px;
+  letter-spacing: 0.08em;
+}
+.difficulty-easy { background:rgba(74,222,128,0.2); color:var(--easy); }
+.difficulty-medium { background:rgba(251,191,36,0.2); color:var(--medium); }
+.difficulty-hard { background:rgba(248,113,113,0.2); color:var(--hard); }
+
+#close-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+#close-btn:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.4);
+}
+
+#overlay-body {
+  flex: 1;
+  padding: 0 28px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#overlay-desc {
+  color: #b0b0d0;
+  font-size: 14px;
+  line-height: 1.7;
+  flex-shrink: 0;
+}
+
+#overlay-tags {
+  display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+}
+.tag {
+  font-size: 11px; padding: 4px 12px;
+  border-radius: 14px;
+  background: rgba(123,104,238,0.12);
+  color: #c4b5fd;
+  border: 1px solid rgba(123,104,238,0.25);
+}
+
+/* Tab system */
+#tab-bar {
+  display: flex; gap: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.tab-btn {
+  padding: 8px 18px;
+  font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  background: none; border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s;
+  letter-spacing: 0.03em;
+}
+.tab-btn:hover { color: rgba(255,255,255,0.7); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+#code-panel {
+  flex: 1;
+  min-height: 0;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  position: relative;
+}
+#code-panel pre {
+  margin: 0; padding: 20px;
+  height: 100%;
+  overflow: auto;
+  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 13px; line-height: 1.7;
+  color: #d4d4d8;
+  display: none;
+}
+#code-panel pre.active { display: block; }
+
+/* syntax highlighting */
+.code .keyword { color:#c084fc; }
+.code .string { color:#86efac; }
+.code .comment { color:#6b7280; font-style:italic; }
+.code .number { color:#fdba74; }
+.code .func { color:#67e8f9; }
+.code .type { color:#f0abfc; }
+.code .builtin { color:#a5b4fc; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.25); }
+
+/* HUD */
+#hud {
+  position:fixed; top:20px; left:28px; z-index:50;
+  pointer-events: none;
+}
+#hud-title {
+  font-size: 28px; font-weight: 900;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #c4b5fd, #7b68ee, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+#hud-subtitle {
+  font-size: 12px; color: rgba(255,255,255,0.4);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+#hint {
+  position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+  z-index:50; pointer-events: none;
+  font-size: 12px; color: rgba(255,255,255,0.3);
+  letter-spacing: 0.1em;
+  transition: opacity 1s;
+}
+
+/* Click ripple */
+.ripple {
+  position:fixed; pointer-events:none; z-index:50;
+  border-radius:50%;
+  border:1px solid rgba(123,104,238,0.5);
+  animation: ripple-out 0.8s ease-out forwards;
+}
+@keyframes ripple-out {
+  from { width:0; height:0; opacity:1; }
+  to { width:200px; height:200px; opacity:0; margin-left:-100px; margin-top:-100px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="galaxy"></canvas>
+<div id="cursor-glow"></div>
+<div id="planet-labels"></div>
+
+<div id="hud">
+  <div id="hud-title">COSMIC CODE</div>
+  <div id="hud-subtitle">Explore · Solve · Evolve</div>
+</div>
+<div id="hint">Drag to orbit · Scroll to zoom · Click a planet to begin</div>
+
+<!-- Problem Detail Overlay -->
+<div id="overlay">
+  <div id="overlay-handle"></div>
+  <div id="overlay-header">
+    <div class="left">
+      <span id="overlay-number">#01</span>
+      <span id="overlay-title">Two Sum</span>
+      <span id="overlay-difficulty">EASY</span>
+    </div>
+    <button id="close-btn">&times;</button>
+  </div>
+  <div id="overlay-body">
+    <p id="overlay-desc"></p>
+    <div id="overlay-tags"></div>
+    <div id="tab-bar">
+      <button class="tab-btn active" data-lang="python">Python</button>
+      <button class="tab-btn" data-lang="java">Java</button>
+      <button class="tab-btn" data-lang="cpp">C++</button>
+      <button class="tab-btn" data-lang="js">JavaScript</button>
+    </div>
+    <div id="code-panel">
+      <pre class="code active" id="code-python"></pre>
+      <pre class="code" id="code-java"></pre>
+      <pre class="code" id="code-cpp"></pre>
+      <pre class="code" id="code-js"></pre>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ====== DATA: 12 Coding Problems ======
+const problems = [
+  {
+    id: 1, title: "Two Sum", difficulty: "easy",
+    desc: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+    tags: ["Array", "Hash Table"],
+    code: {
+      python: `def twoSum(nums, target):
+    seen = {}
+    for i, n in enumerate(nums):
+        diff = target - n
+        if diff in seen:
+            return [seen[diff], i]
+        seen[n] = i`,
+      java: `public int[] twoSum(int[] nums, int target) {
+    Map<Integer, Integer> map = new HashMap<>();
+    for (int i = 0; i < nums.length; i++) {
+        int diff = target - nums[i];
+        if (map.containsKey(diff))
+            return new int[]{map.get(diff), i};
+        map.put(nums[i], i);
+    }
+    return new int[]{};
+}`,
+      cpp: `vector<int> twoSum(vector<int>& nums, int target) {
+    unordered_map<int, int> mp;
+    for (int i = 0; i < nums.size(); i++) {
+        int diff = target - nums[i];
+        if (mp.count(diff))
+            return {mp[diff], i};
+        mp[nums[i]] = i;
+    }
+    return {};
+}`,
+      js: `function twoSum(nums, target) {
+    const map = new Map();
+    for (let i = 0; i < nums.length; i++) {
+        const diff = target - nums[i];
+        if (map.has(diff))
+            return [map.get(diff), i];
+        map.set(nums[i], i);
+    }
+}`
+    }
+  },
+  {
+    id: 2, title: "Valid Parentheses", difficulty: "easy",
+    desc: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. An input string is valid if open brackets must be closed by the same type of brackets, and open brackets must be closed in the correct order.",
+    tags: ["String", "Stack"],
+    code: {
+      python: `def isValid(s):
+    stack, pairs = [], {')':'(', '}':'{', ']':'['}
+    for c in s:
+        if c in pairs:
+            if not stack or stack.pop() != pairs[c]:
+                return False
+        else:
+            stack.append(c)
+    return not stack`,
+      java: `public boolean isValid(String s) {
+    Deque<Character> stack = new ArrayDeque<>();
+    Map<Character, Character> map = Map.of(')','(', '}','{', ']','[');
+    for (char c : s.toCharArray()) {
+        if (map.containsKey(c)) {
+            if (stack.isEmpty() || stack.pop() != map.get(c))
+                return false;
+        } else stack.push(c);
+    }
+    return stack.isEmpty();
+}`,
+      cpp: `bool isValid(string s) {
+    stack<char> st;
+    unordered_map<char, char> m = {{')','('},{'}','{'},{']','['}};
+    for (char c : s) {
+        if (m.count(c)) {
+            if (st.empty() || st.top() != m[c]) return false;
+            st.pop();
+        } else st.push(c);
+    }
+    return st.empty();
+}`,
+      js: `function isValid(s) {
+    const stack = [], map = {')':'(', '}':'{', ']':'['};
+    for (const c of s) {
+        if (c in map) {
+            if (stack.pop() !== map[c]) return false;
+        } else stack.push(c);
+    }
+    return !stack.length;
+}`
+    }
+  },
+  {
+    id: 3, title: "Merge Sorted Array", difficulty: "easy",
+    desc: "You are given two integer arrays nums1 and nums2, sorted in non-decreasing order, and two integers m and n, representing the number of elements in nums1 and nums2 respectively. Merge nums1 and nums2 into a single array sorted in non-decreasing order. The final sorted array should be stored inside the array nums1.",
+    tags: ["Array", "Two Pointers"],
+    code: {
+      python: `def merge(nums1, m, nums2, n):
+    i, j, k = m-1, n-1, m+n-1
+    while j >= 0:
+        if i >= 0 and nums1[i] > nums2[j]:
+            nums1[k] = nums1[i]; i -= 1
+        else:
+            nums1[k] = nums2[j]; j -= 1
+        k -= 1`,
+      java: `public void merge(int[] nums1, int m, int[] nums2, int n) {
+    int i = m - 1, j = n - 1, k = m + n - 1;
+    while (j >= 0) {
+        if (i >= 0 && nums1[i] > nums2[j])
+            nums1[k--] = nums1[i--];
+        else
+            nums1[k--] = nums2[j--];
+    }
+}`,
+      cpp: `void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+    int i = m - 1, j = n - 1, k = m + n - 1;
+    while (j >= 0) {
+        if (i >= 0 && nums1[i] > nums2[j])
+            nums1[k--] = nums1[i--];
+        else
+            nums1[k--] = nums2[j--];
+    }
+}`,
+      js: `function merge(nums1, m, nums2, n) {
+    let i = m - 1, j = n - 1, k = m + n - 1;
+    while (j >= 0) {
+        if (i >= 0 && nums1[i] > nums2[j])
+            nums1[k--] = nums1[i--];
+        else
+            nums1[k--] = nums2[j--];
+    }
+}`
+    }
+  },
+  {
+    id: 4, title: "LRU Cache", difficulty: "medium",
+    desc: "Design a data structure that follows the constraints of a Least Recently Used (LRU) cache. Implement the LRUCache class: LRUCache(capacity) initializes the cache with positive size capacity. int get(key) returns the value of the key if it exists, otherwise returns -1. void put(key, value) updates the value if the key exists, otherwise adds the key-value pair. If the number of keys exceeds capacity, evict the least recently used key.",
+    tags: ["Hash Table", "Linked List", "Design"],
+    code: {
+      python: `class Node:
+    def __init__(self, k=0, v=0):
+        self.k, self.v = k, v
+        self.prev = self.next = None
+
+class LRUCache:
+    def __init__(self, cap):
+        self.cap = cap
+        self.cache = {}
+        self.head = Node()
+        self.tail = Node()
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _remove(self, node):
+        node.prev.next = node.next
+        node.next.prev = node.prev
+
+    def _add(self, node):
+        node.next = self.head.next
+        node.prev = self.head
+        self.head.next.prev = node
+        self.head.next = node
+
+    def get(self, key):
+        if key not in self.cache: return -1
+        node = self.cache[key]
+        self._remove(node); self._add(node)
+        return node.v
+
+    def put(self, key, value):
+        if key in self.cache:
+            self._remove(self.cache[key])
+        node = Node(key, value)
+        self._add(node)
+        self.cache[key] = node
+        if len(self.cache) > self.cap:
+            lru = self.tail.prev
+            self._remove(lru)
+            del self.cache[lru.k]`,
+      java: `class LRUCache {
+    class Node { int k, v; Node prev, next; Node(int k, int v) { this.k=k; this.v=v; } }
+    int cap;
+    Map<Integer, Node> map = new HashMap<>();
+    Node head = new Node(0,0), tail = new Node(0,0);
+    public LRUCache(int cap) {
+        this.cap = cap;
+        head.next = tail; tail.prev = head;
+    }
+    void remove(Node n) { n.prev.next = n.next; n.next.prev = n.prev; }
+    void add(Node n) {
+        n.next = head.next; n.prev = head;
+        head.next.prev = n; head.next = n;
+    }
+    public int get(int key) {
+        if (!map.containsKey(key)) return -1;
+        Node n = map.get(key); remove(n); add(n); return n.v;
+    }
+    public void put(int key, int value) {
+        if (map.containsKey(key)) remove(map.get(key));
+        Node n = new Node(key, value); add(n); map.put(key, n);
+        if (map.size() > cap) {
+            Node lru = tail.prev; remove(lru); map.remove(lru.k);
+        }
+    }
+}`,
+      cpp: `class LRUCache {
+    struct Node { int k, v; Node *prev, *next; Node(int k=0,int v=0):k(k),v(v){} };
+    int cap;
+    unordered_map<int, Node*> m;
+    Node *head, *tail;
+    void remove(Node* n) { n->prev->next=n->next; n->next->prev=n->prev; }
+    void add(Node* n) {
+        n->next=head->next; n->prev=head;
+        head->next->prev=n; head->next=n;
+    }
+public:
+    LRUCache(int cap): cap(cap) {
+        head=new Node(); tail=new Node();
+        head->next=tail; tail->prev=head;
+    }
+    int get(int key) {
+        if(!m.count(key)) return -1;
+        Node* n=m[key]; remove(n); add(n); return n->v;
+    }
+    void put(int key, int value) {
+        if(m.count(key)) remove(m[key]);
+        Node* n=new Node(key,value); add(n); m[key]=n;
+        if(m.size()>cap) { Node* l=tail->prev; remove(l); m.erase(l->k); delete l; }
+    }
+};`,
+      js: `class LRUCache {
+    constructor(capacity) {
+        this.cap = capacity;
+        this.map = new Map();
+    }
+    get(key) {
+        if (!this.map.has(key)) return -1;
+        const v = this.map.get(key);
+        this.map.delete(key);
+        this.map.set(key, v);
+        return v;
+    }
+    put(key, value) {
+        if (this.map.has(key)) this.map.delete(key);
+        this.map.set(key, value);
+        if (this.map.size > this.cap)
+            this.map.delete(this.map.keys().next().value);
+    }
+}`
+    }
+  },
+  {
+    id: 5, title: "3Sum", difficulty: "medium",
+    desc: "Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, and j != k, and nums[i] + nums[j] + nums[k] == 0. Notice that the solution set must not contain duplicate triplets.",
+    tags: ["Array", "Two Pointers", "Sorting"],
+    code: {
+      python: `def threeSum(nums):
+    nums.sort()
+    res, n = [], len(nums)
+    for i in range(n-2):
+        if i > 0 and nums[i] == nums[i-1]: continue
+        l, r = i+1, n-1
+        while l < r:
+            s = nums[i] + nums[l] + nums[r]
+            if s < 0: l += 1
+            elif s > 0: r -= 1
+            else:
+                res.append([nums[i], nums[l], nums[r]])
+                while l < r and nums[l] == nums[l+1]: l += 1
+                while l < r and nums[r] == nums[r-1]: r -= 1
+                l += 1; r -= 1
+    return res`,
+      java: `public List<List<Integer>> threeSum(int[] nums) {
+    Arrays.sort(nums);
+    List<List<Integer>> res = new ArrayList<>();
+    for (int i = 0; i < nums.length - 2; i++) {
+        if (i > 0 && nums[i] == nums[i-1]) continue;
+        int l = i + 1, r = nums.length - 1;
+        while (l < r) {
+            int sum = nums[i] + nums[l] + nums[r];
+            if (sum < 0) l++;
+            else if (sum > 0) r--;
+            else {
+                res.add(List.of(nums[i], nums[l], nums[r]));
+                while (l < r && nums[l] == nums[l+1]) l++;
+                while (l < r && nums[r] == nums[r-1]) r--;
+                l++; r--;
+            }
+        }
+    }
+    return res;
+}`,
+      cpp: `vector<vector<int>> threeSum(vector<int>& nums) {
+    sort(nums.begin(), nums.end());
+    vector<vector<int>> res;
+    for (int i = 0; i < nums.size(); i++) {
+        if (i > 0 && nums[i] == nums[i-1]) continue;
+        int l = i+1, r = nums.size()-1;
+        while (l < r) {
+            int sum = nums[i] + nums[l] + nums[r];
+            if (sum < 0) l++;
+            else if (sum > 0) r--;
+            else {
+                res.push_back({nums[i],nums[l],nums[r]});
+                while (l<r && nums[l]==nums[l+1]) l++;
+                while (l<r && nums[r]==nums[r-1]) r--;
+                l++; r--;
+            }
+        }
+    }
+    return res;
+}`,
+      js: `function threeSum(nums) {
+    nums.sort((a,b) => a-b);
+    const res = [];
+    for (let i = 0; i < nums.length-2; i++) {
+        if (i > 0 && nums[i] === nums[i-1]) continue;
+        let l = i+1, r = nums.length-1;
+        while (l < r) {
+            const sum = nums[i] + nums[l] + nums[r];
+            if (sum < 0) l++;
+            else if (sum > 0) r--;
+            else {
+                res.push([nums[i], nums[l], nums[r]]);
+                while (l<r && nums[l]===nums[l+1]) l++;
+                while (l<r && nums[r]===nums[r-1]) r--;
+                l++; r--;
+            }
+        }
+    }
+    return res;
+}`
+    }
+  },
+  {
+    id: 6, title: "Longest Palindromic Substring", difficulty: "medium",
+    desc: "Given a string s, return the longest palindromic substring in s. A string is palindromic if it reads the same forward and backward. A substring is a contiguous non-empty sequence of characters within the string.",
+    tags: ["String", "Dynamic Programming"],
+    code: {
+      python: `def longestPalindrome(s):
+    n, start, maxl = len(s), 0, 1
+    dp = [False] * n
+    for i in range(n-1, -1, -1):
+        for j in range(n-1, i-1, -1):
+            if s[i] == s[j] and (j-i < 2 or dp[j-1]):
+                dp[j] = True
+                if j-i+1 > maxl:
+                    start, maxl = i, j-i+1
+            else:
+                dp[j] = False
+    return s[start:start+maxl]`,
+      java: `public String longestPalindrome(String s) {
+    int n = s.length(), start = 0, maxL = 1;
+    boolean[][] dp = new boolean[n][n];
+    for (int i = n-1; i >= 0; i--) {
+        dp[i][i] = true;
+        for (int j = i+1; j < n; j++) {
+            if (s.charAt(i) == s.charAt(j) && (j-i < 2 || dp[i+1][j-1])) {
+                dp[i][j] = true;
+                if (j-i+1 > maxL) { start = i; maxL = j-i+1; }
+            }
+        }
+    }
+    return s.substring(start, start+maxL);
+}`,
+      cpp: `string longestPalindrome(string s) {
+    int n = s.size(), start = 0, maxL = 1;
+    vector<vector<bool>> dp(n, vector<bool>(n));
+    for (int i = n-1; i >= 0; i--) {
+        dp[i][i] = true;
+        for (int j = i+1; j < n; j++) {
+            if (s[i]==s[j] && (j-i<2 || dp[i+1][j-1])) {
+                dp[i][j] = true;
+                if (j-i+1 > maxL) { start = i; maxL = j-i+1; }
+            }
+        }
+    }
+    return s.substr(start, maxL);
+}`,
+      js: `function longestPalindrome(s) {
+    const n = s.length;
+    let start = 0, maxL = 1;
+    const dp = Array.from({length:n}, () => Array(n).fill(false));
+    for (let i = n-1; i >= 0; i--) {
+        dp[i][i] = true;
+        for (let j = i+1; j < n; j++) {
+            if (s[i]===s[j] && (j-i<2 || dp[i+1][j-1])) {
+                dp[i][j] = true;
+                if (j-i+1 > maxL) { start = i; maxL = j-i+1; }
+            }
+        }
+    }
+    return s.slice(start, start+maxL);
+}`
+    }
+  },
+  {
+    id: 7, title: "Rotate Image", difficulty: "medium",
+    desc: "You are given an n x n 2D matrix representing an image. Rotate the image by 90 degrees clockwise. You have to rotate the image in-place, which means you have to modify the input 2D matrix directly. Do not allocate another 2D matrix for the rotation.",
+    tags: ["Array", "Math", "Matrix"],
+    code: {
+      python: `def rotate(matrix):
+    n = len(matrix)
+    for i in range(n):
+        for j in range(i, n):
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+    for row in matrix:
+        row.reverse()`,
+      java: `public void rotate(int[][] matrix) {
+    int n = matrix.length;
+    for (int i = 0; i < n; i++)
+        for (int j = i; j < n; j++) {
+            int tmp = matrix[i][j];
+            matrix[i][j] = matrix[j][i];
+            matrix[j][i] = tmp;
+        }
+    for (int[] row : matrix) {
+        for (int l=0,r=n-1; l<r; l++,r--) {
+            int tmp = row[l]; row[l]=row[r]; row[r]=tmp;
+        }
+    }
+}`,
+      cpp: `void rotate(vector<vector<int>>& matrix) {
+    int n = matrix.size();
+    for (int i = 0; i < n; i++)
+        for (int j = i; j < n; j++)
+            swap(matrix[i][j], matrix[j][i]);
+    for (auto& row : matrix)
+        reverse(row.begin(), row.end());
+}`,
+      js: `function rotate(matrix) {
+    const n = matrix.length;
+    for (let i = 0; i < n; i++)
+        for (let j = i; j < n; j++)
+            [matrix[i][j], matrix[j][i]] = [matrix[j][i], matrix[i][j]];
+    matrix.forEach(row => row.reverse());
+}`
+    }
+  },
+  {
+    id: 8, title: "Merge Intervals", difficulty: "medium",
+    desc: "Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.",
+    tags: ["Array", "Sorting"],
+    code: {
+      python: `def merge(intervals):
+    intervals.sort(key=lambda x: x[0])
+    res = [intervals[0]]
+    for start, end in intervals[1:]:
+        if start <= res[-1][1]:
+            res[-1][1] = max(res[-1][1], end)
+        else:
+            res.append([start, end])
+    return res`,
+      java: `public int[][] merge(int[][] intervals) {
+    Arrays.sort(intervals, (a,b) -> a[0]-b[0]);
+    List<int[]> res = new ArrayList<>();
+    res.add(intervals[0]);
+    for (int i = 1; i < intervals.length; i++) {
+        int[] last = res.get(res.size()-1);
+        if (intervals[i][0] <= last[1])
+            last[1] = Math.max(last[1], intervals[i][1]);
+        else
+            res.add(intervals[i]);
+    }
+    return res.toArray(new int[0][]);
+}`,
+      cpp: `vector<vector<int>> merge(vector<vector<int>>& intervals) {
+    sort(intervals.begin(), intervals.end());
+    vector<vector<int>> res = {intervals[0]};
+    for (int i = 1; i < intervals.size(); i++) {
+        auto& last = res.back();
+        if (intervals[i][0] <= last[1])
+            last[1] = max(last[1], intervals[i][1]);
+        else
+            res.push_back(intervals[i]);
+    }
+    return res;
+}`,
+      js: `function merge(intervals) {
+    intervals.sort((a,b) => a[0]-b[0]);
+    const res = [intervals[0]];
+    for (let i = 1; i < intervals.length; i++) {
+        const last = res[res.length-1];
+        if (intervals[i][0] <= last[1])
+            last[1] = Math.max(last[1], intervals[i][1]);
+        else
+            res.push(intervals[i]);
+    }
+    return res;
+}`
+    }
+  },
+  {
+    id: 9, title: "Trapping Rain Water", difficulty: "hard",
+    desc: "Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining. Water trapped between bars depends on the minimum of the maximum heights to the left and right of each position.",
+    tags: ["Array", "Two Pointers", "Stack"],
+    code: {
+      python: `def trap(height):
+    l, r = 0, len(height) - 1
+    lmax = rmax = water = 0
+    while l < r:
+        if height[l] < height[r]:
+            if height[l] >= lmax: lmax = height[l]
+            else: water += lmax - height[l]
+            l += 1
+        else:
+            if height[r] >= rmax: rmax = height[r]
+            else: water += rmax - height[r]
+            r -= 1
+    return water`,
+      java: `public int trap(int[] height) {
+    int l = 0, r = height.length-1, lMax = 0, rMax = 0, water = 0;
+    while (l < r) {
+        if (height[l] < height[r]) {
+            if (height[l] >= lMax) lMax = height[l];
+            else water += lMax - height[l];
+            l++;
+        } else {
+            if (height[r] >= rMax) rMax = height[r];
+            else water += rMax - height[r];
+            r--;
+        }
+    }
+    return water;
+}`,
+      cpp: `int trap(vector<int>& height) {
+    int l = 0, r = height.size()-1, lMax = 0, rMax = 0, water = 0;
+    while (l < r) {
+        if (height[l] < height[r]) {
+            if (height[l] >= lMax) lMax = height[l];
+            else water += lMax - height[l];
+            l++;
+        } else {
+            if (height[r] >= rMax) rMax = height[r];
+            else water += rMax - height[r];
+            r--;
+        }
+    }
+    return water;
+}`,
+      js: `function trap(height) {
+    let l = 0, r = height.length-1, lMax = 0, rMax = 0, water = 0;
+    while (l < r) {
+        if (height[l] < height[r]) {
+            if (height[l] >= lMax) lMax = height[l];
+            else water += lMax - height[l];
+            l++;
+        } else {
+            if (height[r] >= rMax) rMax = height[r];
+            else water += rMax - height[r];
+            r--;
+        }
+    }
+    return water;
+}`
+    }
+  },
+  {
+    id: 10, title: "Median of Two Sorted Arrays", difficulty: "hard",
+    desc: "Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays. The overall run time complexity should be O(log(m+n)). Do not merge the arrays — use binary search on the smaller array.",
+    tags: ["Array", "Binary Search"],
+    code: {
+      python: `def findMedianSortedArrays(nums1, nums2):
+    if len(nums1) > len(nums2):
+        nums1, nums2 = nums2, nums1
+    m, n = len(nums1), len(nums2)
+    lo, hi = 0, m
+    while lo <= hi:
+        px = (lo + hi) // 2
+        py = (m + n + 1) // 2 - px
+        L1 = nums1[px-1] if px > 0 else float('-inf')
+        R1 = nums1[px] if px < m else float('inf')
+        L2 = nums2[py-1] if py > 0 else float('-inf')
+        R2 = nums2[py] if py < n else float('inf')
+        if L1 <= R2 and L2 <= R1:
+            if (m+n)%2: return max(L1, L2)
+            return (max(L1,L2)+min(R1,R2)) / 2
+        elif L1 > R2: hi = px - 1
+        else: lo = px + 1`,
+      java: `public double findMedianSortedArrays(int[] n1, int[] n2) {
+    if (n1.length > n2.length) { int[] t=n1; n1=n2; n2=t; }
+    int m=n1.length, n=n2.length, lo=0, hi=m;
+    while (lo <= hi) {
+        int px=(lo+hi)/2, py=(m+n+1)/2-px;
+        double L1=px>0?n1[px-1]:Double.NEGATIVE_INFINITY;
+        double R1=px<m?n1[px]:Double.POSITIVE_INFINITY;
+        double L2=py>0?n2[py-1]:Double.NEGATIVE_INFINITY;
+        double R2=py<n?n2[py]:Double.POSITIVE_INFINITY;
+        if (L1<=R2 && L2<=R1) {
+            if ((m+n)%2==1) return Math.max(L1,L2);
+            return (Math.max(L1,L2)+Math.min(R1,R2))/2;
+        }
+        else if (L1>R2) hi=px-1;
+        else lo=px+1;
+    }
+    return 0;
+}`,
+      cpp: `double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+    if (nums1.size() > nums2.size()) swap(nums1, nums2);
+    int m = nums1.size(), n = nums2.size(), lo = 0, hi = m;
+    while (lo <= hi) {
+        int px = (lo+hi)/2, py = (m+n+1)/2 - px;
+        double L1 = px>0 ? nums1[px-1] : INT_MIN;
+        double R1 = px<m ? nums1[px] : INT_MAX;
+        double L2 = py>0 ? nums2[py-1] : INT_MIN;
+        double R2 = py<n ? nums2[py] : INT_MAX;
+        if (L1 <= R2 && L2 <= R1) {
+            if ((m+n)%2) return max(L1, L2);
+            return (max(L1,L2) + min(R1,R2)) / 2.0;
+        }
+        else if (L1 > R2) hi = px - 1;
+        else lo = px + 1;
+    }
+    return 0;
+}`,
+      js: `function findMedianSortedArrays(nums1, nums2) {
+    if (nums1.length > nums2.length) [nums1, nums2] = [nums2, nums1];
+    const m = nums1.length, n = nums2.length;
+    let lo = 0, hi = m;
+    while (lo <= hi) {
+        const px = (lo+hi)>>1, py = ((m+n+1)>>1)-px;
+        const L1 = px>0?nums1[px-1]:-Infinity;
+        const R1 = px<m?nums1[px]:Infinity;
+        const L2 = py>0?nums2[py-1]:-Infinity;
+        const R2 = py<n?nums2[py]:Infinity;
+        if (L1<=R2 && L2<=R1) {
+            if ((m+n)%2) return Math.max(L1, L2);
+            return (Math.max(L1,L2)+Math.min(R1,R2))/2;
+        }
+        else if (L1>R2) hi = px-1;
+        else lo = px+1;
+    }
+}`
+    }
+  },
+  {
+    id: 11, title: "Regular Expression Matching", difficulty: "hard",
+    desc: "Given an input string s and a pattern p, implement regular expression matching with support for '.' and '*' where '.' matches any single character and '*' matches zero or more of the preceding element. The matching should cover the entire input string, not partial.",
+    tags: ["String", "Dynamic Programming", "Recursion"],
+    code: {
+      python: `def isMatch(s, p):
+    m, n = len(s), len(p)
+    dp = [[False]*(n+1) for _ in range(m+1)]
+    dp[0][0] = True
+    for j in range(1, n+1):
+        if p[j-1] == '*': dp[0][j] = dp[0][j-2]
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if p[j-1] == '*':
+                dp[i][j] = dp[i][j-2] or \
+                    (dp[i-1][j] and p[j-2] in {s[i-1], '.'})
+            else:
+                dp[i][j] = dp[i-1][j-1] and \
+                    p[j-1] in {s[i-1], '.'}
+    return dp[m][n]`,
+      java: `public boolean isMatch(String s, String p) {
+    int m=s.length(), n=p.length();
+    boolean[][] dp = new boolean[m+1][n+1];
+    dp[0][0] = true;
+    for (int j=1; j<=n; j++)
+        if (p.charAt(j-1)=='*') dp[0][j] = dp[0][j-2];
+    for (int i=1; i<=m; i++)
+        for (int j=1; j<=n; j++) {
+            if (p.charAt(j-1)=='*') {
+                dp[i][j] = dp[i][j-2] ||
+                    (dp[i-1][j] && (p.charAt(j-2)=='.' || p.charAt(j-2)==s.charAt(i-1)));
+            } else {
+                dp[i][j] = dp[i-1][j-1] &&
+                    (p.charAt(j-1)=='.' || p.charAt(j-1)==s.charAt(i-1));
+            }
+        }
+    return dp[m][n];
+}`,
+      cpp: `bool isMatch(string s, string p) {
+    int m=s.size(), n=p.size();
+    vector<vector<bool>> dp(m+1, vector<bool>(n+1));
+    dp[0][0] = true;
+    for (int j=1; j<=n; j++)
+        if (p[j-1]=='*') dp[0][j] = dp[0][j-2];
+    for (int i=1; i<=m; i++)
+        for (int j=1; j<=n; j++) {
+            if (p[j-1]=='*')
+                dp[i][j] = dp[i][j-2] ||
+                    (dp[i-1][j] && (p[j-2]=='.'||p[j-2]==s[i-1]));
+            else
+                dp[i][j] = dp[i-1][j-1] &&
+                    (p[j-1]=='.'||p[j-1]==s[i-1]);
+        }
+    return dp[m][n];
+}`,
+      js: `function isMatch(s, p) {
+    const m=s.length, n=p.length;
+    const dp = Array.from({length:m+1},()=>Array(n+1).fill(false));
+    dp[0][0] = true;
+    for (let j=1; j<=n; j++)
+        if (p[j-1]==='*') dp[0][j] = dp[0][j-2];
+    for (let i=1; i<=m; i++)
+        for (let j=1; j<=n; j++) {
+            if (p[j-1]==='*')
+                dp[i][j] = dp[i][j-2] ||
+                    (dp[i-1][j] && (p[j-2]==='.'||p[j-2]===s[i-1]));
+            else
+                dp[i][j] = dp[i-1][j-1] &&
+                    (p[j-1]==='.'||p[j-1]===s[i-1]);
+        }
+    return dp[m][n];
+}`
+    }
+  },
+  {
+    id: 12, title: "Word Ladder", difficulty: "hard",
+    desc: "A transformation sequence from word beginWord to word endWord using a dictionary wordList is a sequence of words where each adjacent pair differs by a single letter. Every adjacent pair of words differs by a single letter. Return the number of words in the shortest transformation sequence, or 0 if no such sequence exists.",
+    tags: ["String", "BFS", "Hash Table"],
+    code: {
+      python: `from collections import deque
+
+def ladderLength(begin, end, wordList):
+    words = set(wordList)
+    if end not in words: return 0
+    q = deque([(begin, 1)])
+    while q:
+        word, steps = q.popleft()
+        if word == end: return steps
+        for i in range(len(word)):
+            for c in 'abcdefghijklmnopqrstuvwxyz':
+                nxt = word[:i] + c + word[i+1:]
+                if nxt in words:
+                    words.remove(nxt)
+                    q.append((nxt, steps+1))
+    return 0`,
+      java: `public int ladderLength(String begin, String end, List<String> wordList) {
+    Set<String> words = new HashSet<>(wordList);
+    if (!words.contains(end)) return 0;
+    Queue<String> q = new LinkedList<>();
+    q.offer(begin);
+    int steps = 1;
+    while (!q.isEmpty()) {
+        int size = q.size();
+        for (int k = 0; k < size; k++) {
+            String w = q.poll();
+            if (w.equals(end)) return steps;
+            char[] arr = w.toCharArray();
+            for (int i = 0; i < arr.length; i++) {
+                char orig = arr[i];
+                for (char c = 'a'; c <= 'z'; c++) {
+                    arr[i] = c;
+                    String nxt = new String(arr);
+                    if (words.contains(nxt)) {
+                        words.remove(nxt);
+                        q.offer(nxt);
+                    }
+                }
+                arr[i] = orig;
+            }
+        }
+        steps++;
+    }
+    return 0;
+}`,
+      cpp: `int ladderLength(string begin, string end, vector<string>& wordList) {
+    unordered_set<string> words(wordList.begin(), wordList.end());
+    if (!words.count(end)) return 0;
+    queue<pair<string,int>> q;
+    q.push({begin, 1});
+    while (!q.empty()) {
+        auto [w, steps] = q.front(); q.pop();
+        if (w == end) return steps;
+        for (int i = 0; i < w.size(); i++) {
+            char orig = w[i];
+            for (char c = 'a'; c <= 'z'; c++) {
+                w[i] = c;
+                if (words.count(w)) {
+                    words.erase(w);
+                    q.push({w, steps+1});
+                }
+            }
+            w[i] = orig;
+        }
+    }
+    return 0;
+}`,
+      js: `function ladderLength(beginWord, endWord, wordList) {
+    const words = new Set(wordList);
+    if (!words.has(endWord)) return 0;
+    const q = [[beginWord, 1]];
+    while (q.length) {
+        const [word, steps] = q.shift();
+        if (word === endWord) return steps;
+        const arr = word.split('');
+        for (let i = 0; i < arr.length; i++) {
+            const orig = arr[i];
+            for (let c = 97; c <= 122; c++) {
+                arr[i] = String.fromCharCode(c);
+                const nxt = arr.join('');
+                if (words.has(nxt)) {
+                    words.delete(nxt);
+                    q.push([nxt, steps + 1]);
+                }
+            }
+            arr[i] = orig;
+        }
+    }
+    return 0;
+}`
+    }
+  }
+];
+
+// ====== THREE.JS SETUP ======
+const canvas = document.getElementById('galaxy');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000010, 0.000015);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 200);
+camera.position.set(0, 8, 28);
+camera.lookAt(0, 0, 0);
+
+// ====== ORBIT STATE ======
+const orbit = {
+  target: new THREE.Vector3(0, 0, 0),
+  theta: Math.PI / 2,
+  phi: Math.PI / 3,
+  radius: 30,
+  minRadius: 8,
+  maxRadius: 60,
+  autoRotate: true,
+  autoRotateSpeed: 0.15,
+  damping: 0.08,
+  isDragging: false,
+  prevMouse: { x: 0, y: 0 },
+  targetTheta: Math.PI / 2,
+  targetPhi: Math.PI / 3,
+  targetRadius: 30
+};
+
+function updateCameraFromOrbit() {
+  const sp = new THREE.Spherical(orbit.radius, orbit.phi, orbit.theta);
+  const pos = new THREE.Vector3().setFromSpherical(sp).add(orbit.target);
+  camera.position.copy(pos);
+  camera.lookAt(orbit.target);
+}
+
+function updateOrbitTargets() {
+  orbit.targetTheta += (Math.PI * 2 - orbit.targetTheta) * orbit.damping;
+  orbit.targetPhi += (Math.PI / 3 - orbit.targetPhi) * orbit.damping;
+  orbit.targetRadius += (30 - orbit.targetRadius) * orbit.damping;
+  orbit.theta += (orbit.targetTheta - orbit.theta) * orbit.damping;
+  orbit.phi += (orbit.targetPhi - orbit.targetPhi) * orbit.damping;
+  orbit.radius += (orbit.targetRadius - orbit.radius) * orbit.damping;
+}
+
+// ====== MOUSE EVENTS ======
+const mouse = new THREE.Vector2();
+const mouseWorld = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.3;
+raycaster.params.Line = { threshold: 0.3 };
+
+canvas.addEventListener('mousedown', (e) => {
+  orbit.isDragging = true;
+  orbit.autoRotate = false;
+  orbit.prevMouse.x = e.clientX;
+  orbit.prevMouse.y = e.clientY;
+});
+
+window.addEventListener('mouseup', () => {
+  orbit.isDragging = false;
+  setTimeout(() => { if (!orbit.zoomTarget) orbit.autoRotate = true; }, 2000);
+});
+
+window.addEventListener('mousemove', (e) => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  // Cursor glow
+  const glow = document.getElementById('cursor-glow');
+  glow.style.left = e.clientX + 'px';
+  glow.style.top = e.clientY + 'px';
+
+  if (orbit.isDragging && !orbit.zoomTarget) {
+    const dx = e.clientX - orbit.prevMouse.x;
+    const dy = e.clientY - orbit.prevMouse.y;
+    orbit.targetTheta -= dx * 0.005;
+    orbit.targetPhi -= dy * 0.005;
+    orbit.targetPhi = Math.max(0.1, Math.min(Math.PI - 0.1, orbit.targetPhi));
+    orbit.prevMouse.x = e.clientX;
+    orbit.prevMouse.y = e.clientY;
+  }
+
+  // Raycaster for hover
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(planetMeshes);
+
+  updateHover(intersects.length > 0 ? intersects[0].object : null);
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  if (orbit.zoomTarget) return;
+  orbit.targetRadius += e.deltaY * 0.03;
+  orbit.targetRadius = Math.max(orbit.minRadius, Math.min(orbit.maxRadius, orbit.targetRadius));
+});
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    orbit.isDragging = true;
+    orbit.autoRotate = false;
+    orbit.prevMouse.x = e.touches[0].clientX;
+    orbit.prevMouse.y = e.touches[0].clientY;
+  }
+}, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1 && orbit.isDragging && !orbit.zoomTarget) {
+    const dx = e.touches[0].clientX - orbit.prevMouse.x;
+    const dy = e.touches[0].clientY - orbit.prevMouse.y;
+    orbit.targetTheta -= dx * 0.005;
+    orbit.targetPhi -= dy * 0.005;
+    orbit.targetPhi = Math.max(0.1, Math.min(Math.PI - 0.1, orbit.targetPhi));
+    orbit.prevMouse.x = e.touches[0].clientX;
+    orbit.prevMouse.y = e.touches[0].clientY;
+  }
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener('touchend', () => {
+  orbit.isDragging = false;
+  setTimeout(() => { if (!orbit.zoomTarget) orbit.autoRotate = true; }, 2000);
+});
+
+// Click handler
+let zoomTarget = null;
+let zoomStartTime = 0;
+canvas.addEventListener('click', (e) => {
+  if (orbit.isDragging) return;
+  if (zoomTarget) return;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(planetMeshes);
+  if (intersects.length > 0) {
+    const planetObj = intersects[0].object;
+    const problemData = planetObj.userData.problem;
+    zoomTarget = planetObj;
+    zoomStartTime = performance.now();
+
+    // Ripple effect
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple';
+    ripple.style.left = e.clientX + 'px';
+    ripple.style.top = e.clientY + 'px';
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 800);
+
+    // Hide hint
+    document.getElementById('hint').style.opacity = '0';
+  }
+});
+
+// ====== LIGHTS ======
+const ambientLight = new THREE.AmbientLight(0x1a1a3e, 1.5);
+scene.add(ambientLight);
+const pointLight = new THREE.PointLight(0x7b68ee, 80, 100);
+pointLight.position.set(0, 0, 0);
+scene.add(pointLight);
+const pointLight2 = new THREE.PointLight(0x4f46e5, 40, 60);
+pointLight2.position.set(10, 5, -5);
+scene.add(pointLight2);
+
+// ====== STARFIELD ======
+function createStarfield() {
+  const count = 2000;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+
+  for (let i = 0; i < count; i++) {
+    // Random position in a large sphere
+    const radius = 30 + Math.random() * 70;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = radius * Math.cos(phi);
+
+    // Colors: mostly white/blue with some colored stars
+    const colorChoice = Math.random();
+    if (colorChoice < 0.1) { colors[i*3]=1; colors[i*3+1]=0.85; colors[i*3+2]=0.6; }
+    else if (colorChoice < 0.2) { colors[i*3]=0.6; colors[i*3+1]=0.7; colors[i*3+2]=1; }
+    else if (colorChoice < 0.25) { colors[i*3]=0.8; colors[i*3+1]=0.5; colors[i*3+2]=1; }
+    else { const b=0.8+Math.random()*0.2; colors[i*3]=b; colors[i*3+1]=b; colors[i*3+2]=b; }
+
+    sizes[i] = Math.random() * 2.5 + 0.5;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+  const mat = new THREE.PointsMaterial({
+    size: 0.15,
+    vertexColors: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.9
+  });
+
+  const stars = new THREE.Points(geo, mat);
+  stars.name = 'starfield';
+  scene.add(stars);
+  return stars;
+}
+
+// ====== NEBULA ======
+function createNebula() {
+  const group = new THREE.Group();
+
+  // Central nebula - layers of particles
+  const colors = [
+    new THREE.Color('#7b68ee'),
+    new THREE.Color('#4f46e5'),
+    new THREE.Color('#c084fc'),
+    new THREE.Color('#6366f1'),
+    new THREE.Color('#a78bfa')
+  ];
+
+  for (let layer = 0; layer < 3; layer++) {
+    const count = 800;
+    const positions = new Float32Array(count * 3);
+    const layerColors = new Float32Array(count * 3);
+    const color = colors[layer];
+
+    const spread = (layer + 1) * 4;
+
+    for (let i = 0; i < count; i++) {
+      const r = Math.random() * spread;
+      const t = Math.random() * Math.PI * 2;
+      const p = Math.acos(2 * Math.random() - 1);
+      positions[i * 3] = r * Math.sin(p) * Math.cos(t);
+      positions[i * 3 + 1] = r * Math.sin(p) * Math.sin(t) * 0.4;
+      positions[i * 3 + 2] = r * Math.cos(p);
+
+      const alpha = (1 - r / spread) * 0.5;
+      layerColors[i * 3] = color.r * alpha;
+      layerColors[i * 3 + 1] = color.g * alpha;
+      layerColors[i * 3 + 2] = color.b * alpha;
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(layerColors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.25 + layer * 0.1,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      transparent: true,
+      opacity: 0.6
+    });
+
+    const points = new THREE.Points(geo, mat);
+    points.userData = { rotSpeed: 0.02 + layer * 0.01, rotAxis: layer === 0 ? 'y' : layer === 1 ? 'x' : 'z' };
+    group.add(points);
+  }
+
+  // Bright core
+  const coreCount = 200;
+  const corePositions = new Float32Array(coreCount * 3);
+  const coreColors = new Float32Array(coreCount * 3);
+  for (let i = 0; i < coreCount; i++) {
+    const r = Math.random() * 2;
+    const t = Math.random() * Math.PI * 2;
+    const p = Math.acos(2 * Math.random() - 1);
+    corePositions[i*3] = r * Math.sin(p) * Math.cos(t);
+    corePositions[i*3+1] = r * Math.sin(p) * Math.sin(t);
+    corePositions[i*3+2] = r * Math.cos(p);
+    coreColors[i*3] = 1; coreColors[i*3+1] = 0.85; coreColors[i*3+2] = 1;
+  }
+  const coreGeo = new THREE.BufferGeometry();
+  coreGeo.setAttribute('position', new THREE.BufferAttribute(corePositions, 3));
+  coreGeo.setAttribute('color', new THREE.BufferAttribute(coreColors, 3));
+  const coreMat = new THREE.PointsMaterial({
+    size: 0.3, vertexColors: true, blending: THREE.AdditiveBlending,
+    depthWrite: false, transparent: true, opacity: 0.9
+  });
+  const core = new THREE.Points(coreGeo, coreMat);
+  group.add(core);
+
+  group.name = 'nebula';
+  scene.add(group);
+  return group;
+}
+
+// ====== PLANET TEXTURE ======
+function createPlanetTexture(baseColor, hasAtmosphere) {
+  const size = 256;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Base
+  const grad = ctx.createRadialGradient(size/2, size/2, size*0.1, size/2, size/2, size/2);
+  grad.addColorStop(0, baseColor);
+  grad.addColorStop(0.5, baseColor);
+  grad.addColorStop(1, '#000000');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  // Craters / surface detail
+  if (hasAtmosphere) {
+    for (let i = 0; i < 40; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = Math.random() * 8 + 2;
+      const alpha = Math.random() * 0.3;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fill();
+    }
+    for (let i = 0; i < 15; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = Math.random() * 15 + 5;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,0,0,${Math.random()*0.4})`;
+      ctx.fill();
+    }
+  }
+
+  return new THREE.CanvasTexture(c);
+}
+
+// ====== GLOW SPRITE ======
+function createGlowSprite(colorStr) {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0, colorStr);
+  grad.addColorStop(0.3, colorStr);
+  grad.addColorStop(0.6, 'rgba(0,0,0,0.1)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  const tex = new THREE.CanvasTexture(c);
+  const spriteMat = new THREE.SpriteMaterial({
+    map: tex,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.6
+  });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(3, 3, 1);
+  return sprite;
+}
+
+// ====== HOLOGRAPHIC STATS ======
+function createHoloText(text) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0)';
+  ctx.fillRect(0, 0, 512, 64);
+  ctx.font = 'bold 28px "Segoe UI","PingFang SC",sans-serif';
+  ctx.fillStyle = '#7b68ee';
+  ctx.shadowColor = '#7b68ee';
+  ctx.shadowBlur = 15;
+  ctx.textAlign = 'center';
+  ctx.fillText(text, 256, 40);
+  const tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearFilter;
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.7
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(8, 1, 1);
+  return sprite;
+}
+
+// ====== CREATE PLANETS ======
+const difficultyColors = {
+  easy: '#4ade80',
+  medium: '#fbbf24',
+  hard: '#f87171'
+};
+const difficultyGlow = {
+  easy: 'rgba(74,222,128,0.8)',
+  medium: 'rgba(251,191,36,0.8)',
+  hard: 'rgba(248,113,113,0.8)'
+};
+const difficultySizes = { easy: 0.8, medium: 1.1, hard: 1.4 };
+
+const planetMeshes = [];
+const planetGroups = [];
+const planetGlowSprites = [];
+
+// Planet positions in a spiral-like pattern
+function getPlanetPosition(index, total) {
+  const goldenRatio = (1 + Math.sqrt(5)) / 2;
+  const angleIncrement = Math.PI * 2 / goldenRatio;
+  const t = index / total;
+
+  // Spiral distribution
+  const radius = 8 + t * 16;
+  const angle = index * angleIncrement;
+  const height = (Math.random() - 0.5) * 12;
+
+  return new THREE.Vector3(
+    Math.cos(angle) * radius + (Math.random() - 0.5) * 4,
+    height,
+    Math.sin(angle) * radius + (Math.random() - 0.5) * 4
+  );
+}
+
+problems.forEach((prob, i) => {
+  const pos = getPlanetPosition(i, problems.length);
+  const color = difficultyColors[prob.difficulty];
+  const glow = difficultyGlow[prob.difficulty];
+  const size = difficultySizes[prob.difficulty];
+
+  // Planet mesh
+  const tex = createPlanetTexture(color, true);
+  const geo = new THREE.SphereGeometry(size, 32, 32);
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.7,
+    metalness: 0.1,
+    emissive: new THREE.Color(color),
+    emissiveIntensity: 0.3
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(pos);
+  mesh.userData = { problem: prob, baseEmissive: 0.3, size };
+  mesh.castShadow = true;
+
+  // Glow sprite
+  const glowSprite = createGlowSprite(glow);
+  mesh.add(glowSprite);
+  planetGlowSprites.push(glowSprite);
+
+  // Ring for medium/hard
+  if (prob.difficulty !== 'easy') {
+    const ringGeo = new THREE.TorusGeometry(size * 1.4, 0.04, 16, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(color),
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2 + Math.random() * 0.5;
+    ring.rotation.y = Math.random() * Math.PI;
+    ring.userData = { rotSpeed: 0.3 + Math.random() * 0.5 };
+    mesh.add(ring);
+  }
+
+  scene.add(mesh);
+  planetMeshes.push(mesh);
+
+  // Orbit ring (subtle)
+  const orbitRingGeo = new THREE.TorusGeometry(pos.length() * 0.95, 0.02, 8, 128);
+  const orbitRingMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(color),
+    transparent: true,
+    opacity: 0.08,
+    depthWrite: false
+  });
+  const orbitRing = new THREE.Mesh(orbitRingGeo, orbitRingMat);
+  orbitRing.position.y = height;
+  orbitRing.rotation.x = Math.PI / 2;
+  scene.add(orbitRing);
+});
+
+// ====== CONSTELLATION LINES ======
+function createConstellationLines() {
+  const tagGroups = {};
+  problems.forEach(p => {
+    p.tags.forEach(tag => {
+      if (!tagGroups[tag]) tagGroups[tag] = [];
+      tagGroups[tag].push(p.id - 1);
+    });
+  });
+
+  const group = new THREE.Group();
+
+  Object.values(tagGroups).forEach(indices => {
+    if (indices.length < 2) return;
+    const color = new THREE.Color().setHSL(Math.random() * 360 / 360, 0.7, 0.5);
+
+    for (let i = 0; i < indices.length; i++) {
+      for (let j = i + 1; j < indices.length; j++) {
+        const p1 = planetMeshes[indices[i]].position;
+        const p2 = planetMeshes[indices[j]].position;
+        const dist = p1.distanceTo(p2);
+        if (dist > 20) continue;
+
+        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+        const points = [p1, mid, p2];
+        const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+        const curvePoints = curve.getPoints(32);
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
+        const lineMat = new THREE.LineBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.15,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+        group.add(new THREE.Line(lineGeo, lineMat));
+      }
+    }
+  });
+
+  group.name = 'constellations';
+  scene.add(group);
+  return group;
+}
+
+// ====== FLOATING LABELS ======
+const labelContainer = document.getElementById('planet-labels');
+const labelEls = [];
+
+problems.forEach((prob, i) => {
+  const el = document.createElement('div');
+  el.className = 'planet-label';
+  el.textContent = prob.title;
+  el.style.color = difficultyColors[prob.difficulty];
+  labelContainer.appendChild(el);
+  labelEls.push(el);
+});
+
+// ====== HOLOGRAPHIC STATS IN 3D ======
+function createHoloStats() {
+  const group = new THREE.Group();
+  const stats = [
+    { text: '12 Problems', pos: [-15, 6, -8] },
+    { text: '4 Languages', pos: [14, 5, -6] },
+    { text: 'Easy · Medium · Hard', pos: [0, 7, -10] }
+  ];
+
+  stats.forEach(s => {
+    const sprite = createHoloText(s.text);
+    sprite.position.set(...s.pos);
+    group.add(sprite);
+  });
+
+  group.name = 'holoStats';
+  scene.add(group);
+  return group;
+}
+
+// ====== BUILD SCENE ======
+updateCameraFromOrbit();
+const starfield = createStarfield();
+const nebula = createNebula();
+const constellations = createConstellationLines();
+const holoStats = createHoloStats();
+
+// ====== HOVER LOGIC ======
+let hoveredPlanet = null;
+
+function updateHover(planet) {
+  // Reset previous
+  if (hoveredPlanet && hoveredPlanet !== planet) {
+    const prev = hoveredPlanet.userData.problem;
+    hoveredPlanet.material.emissiveIntensity = hoveredPlanet.userData.baseEmissive;
+    if (hoveredPlanet.userData.glowSprite) {
+      hoveredPlanet.userData.glowSprite.material.opacity = 0.6;
+    }
+    const idx = prev.id - 1;
+    labelEls[idx].classList.remove('visible');
+  }
+
+  hoveredPlanet = planet;
+
+  if (planet) {
+    document.body.style.cursor = 'pointer';
+    const prob = planet.userData.problem;
+    planet.material.emissiveIntensity = 0.8;
+    if (planet.userData.glowSprite) {
+      planet.userData.glowSprite.material.opacity = 1;
+    }
+    const idx = prob.id - 1;
+    labelEls[idx].classList.add('visible');
+  } else {
+    document.body.style.cursor = 'default';
+  }
+}
+
+// ====== OVERLAY LOGIC ======
+const overlay = document.getElementById('overlay');
+const closeBtn = document.getElementById('close-btn');
+const tabBtns = document.querySelectorAll('.tab-btn');
+const codePres = {
+  python: document.getElementById('code-python'),
+  java: document.getElementById('code-java'),
+  cpp: document.getElementById('code-cpp'),
+  js: document.getElementById('code-js')
+};
+
+let activeProblem = null;
+
+function openOverlay(problem) {
+  activeProblem = problem;
+  document.getElementById('overlay-number').textContent = `#${String(problem.id).padStart(2,'0')}`;
+  document.getElementById('overlay-title').textContent = problem.title;
+
+  const diffEl = document.getElementById('overlay-difficulty');
+  diffEl.textContent = problem.difficulty.toUpperCase();
+  diffEl.className = `difficulty-${problem.difficulty}`;
+
+  document.getElementById('overlay-desc').textContent = problem.desc;
+
+  const tagsEl = document.getElementById('overlay-tags');
+  tagsEl.innerHTML = problem.tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+  // Set code
+  codePres.python.textContent = problem.code.python;
+  codePres.java.textContent = problem.code.java;
+  codePres.cpp.textContent = problem.code.cpp;
+  codePres.js.textContent = problem.code.js;
+
+  // Reset to Python tab
+  document.querySelectorAll('#code-panel pre').forEach(p => p.classList.remove('active'));
+  codePres.python.classList.add('active');
+  tabBtns.forEach(b => b.classList.remove('active'));
+  tabBtns[0].classList.add('active');
+
+  overlay.classList.add('open');
+}
+
+function closeOverlay() {
+  overlay.classList.remove('open');
+  zoomTarget = null;
+  activeProblem = null;
+
+  // Reset planet glow
+  if (hoveredPlanet) {
+    hoveredPlanet.material.emissiveIntensity = hoveredPlanet.userData.baseEmissive;
+  }
+
+  // Animate back to default view
+  orbit.targetTheta = orbit.theta;
+  orbit.targetPhi = Math.PI / 3;
+  orbit.targetRadius = 30;
+  orbit.autoRotate = true;
+
+  document.getElementById('hint').style.opacity = '1';
+}
+
+closeBtn.addEventListener('click', closeOverlay);
+
+// Tab switching
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const lang = btn.dataset.lang;
+    document.querySelectorAll('#code-panel pre').forEach(p => p.classList.remove('active'));
+    codePres[lang].classList.add('active');
+  });
+});
+
+// Keyboard close
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && overlay.classList.contains('open')) {
+    closeOverlay();
+  }
+});
+
+// ====== ANIMATION LOOP ======
+const clock = new THREE.Clock();
+const targetCamPos = new THREE.Vector3();
+const targetLookAt = new THREE.Vector3();
+
+function animate(time) {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 0.1);
+  const elapsed = time * 0.001;
+
+  // Auto rotate
+  if (orbit.autoRotate && !zoomTarget) {
+    orbit.targetTheta += orbit.autoRotateSpeed * dt;
+  }
+
+  // Zoom to planet
+  if (zoomTarget) {
+    const targetWorldPos = new THREE.Vector3();
+    zoomTarget.getWorldPosition(targetWorldPos);
+    const dir = targetWorldPos.clone().normalize();
+    targetCamPos.copy(targetWorldPos.clone().add(dir.multiplyScalar(5)));
+    targetLookAt.copy(targetWorldPos);
+
+    // Lerp camera
+    const lerpFactor = 1 - Math.exp(-2.5 * dt);
+    camera.position.lerp(targetCamPos, lerpFactor);
+    camera.lookAt(targetLookAt);
+
+    // Check if close enough
+    if (camera.position.distanceTo(targetCamPos) < 0.3 && !overlay.classList.contains('open')) {
+      const prob = zoomTarget.userData.problem;
+      openOverlay(prob);
+
+      // Reset orbit state
+      orbit.theta = Math.atan2(camera.position.x, camera.position.z);
+      const horizDist = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
+      orbit.phi = Math.atan2(horizDist, camera.position.y);
+      orbit.radius = camera.position.length();
+      orbit.targetTheta = orbit.theta;
+      orbit.targetPhi = orbit.phi;
+      orbit.targetRadius = orbit.radius;
+    }
+  } else {
+    // Normal orbit update
+    updateOrbitTargets();
+    updateCameraFromOrbit();
+  }
+
+  // Animate nebula
+  nebula.children.forEach(child => {
+    if (child.isPoints && child.userData.rotSpeed) {
+      const axis = child.userData.rotAxis;
+      if (axis === 'y') child.rotation.y += child.userData.rotSpeed * dt;
+      else if (axis === 'x') child.rotation.x += child.userData.rotSpeed * dt;
+      else child.rotation.z += child.userData.rotSpeed * dt;
+    }
+  });
+
+  // Animate planet rings
+  planetMeshes.forEach(mesh => {
+    mesh.rotation.y += dt * 0.15;
+    mesh.children.forEach(child => {
+      if (child.isMesh && child.geometry.type === 'TorusGeometry' && child.userData.rotSpeed) {
+        child.rotation.z += child.userData.rotSpeed * dt;
+      }
+    });
+  });
+
+  // Twinkle starfield - subtle
+  if (Math.random() < 0.02) {
+    starfield.material.opacity = 0.85 + Math.sin(elapsed * 3) * 0.05;
+  }
+
+  // Animate holographic stats
+  holoStats.children.forEach((sprite, i) => {
+    sprite.position.y += Math.sin(elapsed * 0.8 + i * 2) * dt * 0.3;
+    sprite.material.opacity = 0.5 + Math.sin(elapsed * 1.2 + i) * 0.2;
+  });
+
+  // Update labels
+  planetMeshes.forEach((mesh, i) => {
+    if (mesh.userData.problem) {
+      const worldPos = new THREE.Vector3();
+      mesh.getWorldPosition(worldPos);
+      const screenPos = worldPos.clone().project(camera);
+
+      if (screenPos.z > 1) {
+        labelEls[i].style.display = 'none';
+        return;
+      }
+      labelEls[i].style.display = '';
+      const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight - 20;
+      labelEls[i].style.left = x + 'px';
+      labelEls[i].style.top = y + 'px';
+
+      // Fade labels based on distance
+      const dist = camera.position.distanceTo(worldPos);
+      labelEls[i].style.opacity = Math.max(0, 1 - (dist - 5) / 30);
+    }
+  });
+
+  // Animate point light to pulse
+  pointLight.intensity = 80 + Math.sin(elapsed * 0.5) * 10;
+
+  renderer.render(scene, camera);
+}
+
+// ====== RESIZE ======
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ====== START ======
+requestAnimationFrame(animate);
+
+console.log('🚀 Cosmic Code Explorer ready — explore the galaxy of coding problems!');
+</script>
+</body>
+</html>

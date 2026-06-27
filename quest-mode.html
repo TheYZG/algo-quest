@@ -1,0 +1,4744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算法大陆 - Algorithm Kingdoms</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  /* Theme-swappable tokens (JS theme system overrides these) */
+  --bg: #faf8f5;
+  --surface: #ffffff;
+  --card: #f4f1eb;
+  --border: #e8e4dc;
+  --border-light: #d8d4cc;
+  --text: #1a1c2e;
+  --text-dim: #5a5d6e;
+  --input-bg: #faf8f5;
+  /* Semantic color tokens */
+  --green: #4ecdc4;
+  --cyan: #38bdf8;
+  --amber: #d4a017;
+  --pink: #f472b6;
+  --purple: #a855f7;
+  --red: #ff6b6b;
+  --gold: #d4a017;
+  --hp-green: #4ecdc4;
+  --hp-yellow: #ffd93d;
+  --hp-red: #ff6b6b;
+  /* Magazine-specific tokens (NOT overridden by theme JS) */
+  --accent: #ff6b6b;
+  --accent-hover: #e85d5d;
+  --code-bg: #f0ede8;
+  --ink: rgba(26,28,46,0.05);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.04);
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+  /* Typography */
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-code: 'Space Mono', 'Courier New', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(210,200,180,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(200,190,170,0.08) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+::selection { background: var(--accent); color: #fff; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes defeatAnim { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.5); } 100% { opacity: 0; transform: scale(0); } }
+@keyframes victoryGlow { 0% { box-shadow: 0 0 40px rgba(78,205,196,0.3); } 100% { box-shadow: none; } }
+@keyframes rainbowGlow {
+  0%   { box-shadow: 0 0 20px rgba(255,107,107,0.15), 0 0 40px rgba(255,107,107,0.05); }
+  25%  { box-shadow: 0 0 20px rgba(168,85,247,0.15), 0 0 40px rgba(168,85,247,0.05); }
+  50%  { box-shadow: 0 0 20px rgba(56,189,248,0.15), 0 0 40px rgba(56,189,248,0.05); }
+  75%  { box-shadow: 0 0 20px rgba(78,205,196,0.15), 0 0 40px rgba(78,205,196,0.05); }
+  100% { box-shadow: 0 0 20px rgba(255,107,107,0.15), 0 0 40px rgba(255,107,107,0.05); }
+}
+@keyframes chaosTextGlow {
+  0%,100% { color: #ff6b6b; }
+  16% { color: #a855f7; }
+  33% { color: #38bdf8; }
+  50% { color: #4ecdc4; }
+  66% { color: #e9b644; }
+  83% { color: #f472b6; }
+}
+@keyframes toastIn { 0% { opacity: 0; transform: translateX(-50%) translateY(-20px); } 100% { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+@keyframes stageUnlockFlash {
+  0% { box-shadow: 0 0 20px rgba(212,160,23,0.3); border-color: var(--amber); }
+  50% { box-shadow: 0 0 40px rgba(212,160,23,0.5); border-color: var(--amber); }
+  100% { box-shadow: none; border-color: var(--border); }
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app-container { max-width: 1200px; margin: 0 auto; padding: 24px 32px 40px; }
+.screen { display: none; animation: fadeIn 0.35s var(--ease); }
+.screen.active { display: block; }
+
+/* ============================================================
+   HUD
+   ============================================================ */
+.hud-bar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 24px; margin-bottom: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap; font-size: 13px;
+}
+.hud-stat { display: flex; align-items: center; gap: 6px; color: var(--text); }
+.hud-stat .icon { font-size: 18px; }
+.hud-stat .label { color: var(--text-dim); font-size: 10px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+.hud-stat .value { color: var(--accent); font-size: 13px; font-weight: 600; }
+.hud-divider { width: 1px; height: 24px; background: var(--border); }
+.hp-bar-outer { width: 80px; height: 10px; background: var(--code-bg); border-radius: 5px; position: relative; overflow: hidden; }
+.hp-bar-inner { height: 100%; width: 100%; background: var(--hp-green); border-radius: 5px; transition: width 0.5s ease; }
+.hud-mode { margin-left: auto; font-size: 12px; color: var(--accent); padding: 4px 14px; border: 1px solid var(--accent); border-radius: 20px; font-weight: 500; }
+
+/* ============================================================
+   MODE TABS
+   ============================================================ */
+.mode-tabs {
+  display: flex; gap: 8px; margin-bottom: 24px;
+  justify-content: center;
+}
+.mode-tab {
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  padding: 10px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  color: var(--text-dim); cursor: pointer;
+  transition: all 0.2s var(--ease);
+  letter-spacing: 0.02em;
+}
+.mode-tab:hover { color: var(--text); border-color: var(--border-light); box-shadow: var(--shadow-sm); }
+.mode-tab.active {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+/* ============================================================
+   TITLE
+   ============================================================ */
+.screen-title {
+  text-align: center; margin-bottom: 32px;
+  font-family: var(--font-heading); font-size: 28px; font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.subtitle {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   KINGDOM GRID
+   ============================================================ */
+.kingdom-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; margin-bottom: 30px;
+}
+.kingdom-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px; cursor: pointer;
+  transition: all 0.3s var(--ease);
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.kingdom-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--border-light);
+  border-radius: 4px 0 0 4px;
+  transition: width 0.3s var(--ease), background 0.3s var(--ease);
+}
+.kingdom-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-light);
+}
+.kingdom-card > * { position: relative; z-index: 1; }
+.kingdom-card.chaos {
+  animation: rainbowGlow 4s linear infinite;
+}
+.kingdom-card.chaos::before { background: transparent; }
+.kingdom-card.chaos .kingdom-name {
+  animation: chaosTextGlow 4s linear infinite;
+}
+.kingdom-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.kingdom-emoji { font-size: 28px; }
+.kingdom-name { font-family: var(--font-heading); font-size: 16px; font-weight: 700; line-height: 1.4; }
+.kingdom-stats { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.progress-bar-outer {
+  height: 8px; background: var(--code-bg);
+  border-radius: 4px; margin-bottom: 8px;
+  position: relative; overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%; background: var(--accent); border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.difficulty-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.diff-pill {
+  font-family: var(--font-body); font-size: 10px; font-weight: 500;
+  padding: 3px 10px; border: 1px solid; border-radius: 20px;
+  background: transparent; letter-spacing: 0.03em;
+}
+.diff-pill.easy { color: var(--green); border-color: var(--green); }
+.diff-pill.medium { color: var(--amber); border-color: var(--amber); }
+.diff-pill.hard { color: var(--red); border-color: var(--red); }
+
+/* ============================================================
+   ADVENTURE PATH (Mode 2)
+   ============================================================ */
+.adventure-progress {
+  text-align: center; margin-bottom: 24px;
+  font-size: 14px; color: var(--text); padding: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+.adventure-progress .stage-count { color: var(--accent); font-size: 12px; font-weight: 600; }
+
+.adventure-path {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; max-height: 65vh; overflow-y: auto;
+  padding: 20px 40px;
+}
+
+.adventure-stage-wrapper {
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; max-width: 700px;
+}
+
+.adventure-connector {
+  width: 2px; height: 28px;
+  background: var(--border); position: relative;
+}
+.adventure-connector.unlocked { background: var(--green); }
+.adventure-connector.locked { background: var(--border); opacity: 0.4; }
+
+.adventure-stage {
+  display: flex; align-items: center; gap: 16px;
+  width: 100%; padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s var(--ease);
+  position: relative; overflow: hidden;
+}
+.adventure-stage::after {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 40px; height: 40px;
+  border-radius: 0 0 0 40px;
+  opacity: 0; transition: opacity 0.3s;
+}
+.adventure-stage.completed {
+  background: linear-gradient(90deg, rgba(78,205,196,.08), var(--surface) 30%);
+  border-color: rgba(78,205,196,.3);
+}
+.adventure-stage.completed::after { background: rgba(78,205,196,.1); opacity: 1; }
+.adventure-stage.available {
+  cursor: pointer;
+  background: linear-gradient(90deg, rgba(212,160,23,.06), var(--surface) 20%);
+  border-color: rgba(212,160,23,.2);
+}
+.adventure-stage.available:hover {
+  transform: translateX(6px);
+  background: linear-gradient(90deg, rgba(212,160,23,.12), var(--surface) 20%);
+  border-color: rgba(212,160,23,.4);
+  box-shadow: var(--shadow-md);
+}
+.adventure-stage.available.unlocking {
+  animation: stageUnlockFlash 1.5s ease forwards;
+}
+.adventure-stage.locked { opacity: 0.4; cursor: not-allowed; background: var(--card); }
+.adventure-stage .stage-number {
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-size: 20px; font-weight: 700;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); flex-shrink: 0; color: var(--text-dim);
+}
+.adventure-stage.completed .stage-number {
+  border-color: var(--green); color: var(--green);
+}
+.adventure-stage .stage-info { flex: 1; }
+.adventure-stage .stage-problem { font-family: var(--font-code); font-size: 11px; color: var(--text-dim); margin-bottom: 2px; }
+.adventure-stage .stage-title { font-family: var(--font-heading); font-size: 15px; font-weight: 600; }
+.adventure-stage .stage-meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.adventure-stage .kingdom-tag {
+  font-family: var(--font-body); font-size: 10px; padding: 3px 8px;
+  border: 1px solid var(--border); border-radius: 20px;
+  color: var(--text-dim);
+}
+.adventure-stage .stage-enemy { font-size: 28px; flex-shrink: 0; transition: all 0.5s ease; }
+.adventure-stage .stage-status { font-size: 24px; flex-shrink: 0; width: 40px; text-align: center; }
+
+/* ============================================================
+   PLAYLISTS (Mode 3)
+   ============================================================ */
+.playlist-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; margin-bottom: 30px;
+}
+.playlist-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px; cursor: pointer;
+  transition: all 0.3s var(--ease);
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.playlist-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.playlist-card > * { position: relative; z-index: 1; }
+.playlist-card.hot { border-color: var(--accent); border-left: 4px solid var(--accent); }
+.playlist-card.hot:hover { box-shadow: 0 4px 20px rgba(255,107,107,.15); }
+.playlist-card.sword { border-left: 4px solid var(--purple); }
+.playlist-card.sword:hover { box-shadow: 0 4px 20px rgba(168,85,247,.15); }
+.playlist-card.diamond { border-left: 4px solid var(--cyan); }
+.playlist-card.diamond:hover { box-shadow: 0 4px 20px rgba(56,189,248,.15); }
+.playlist-card.dp { border-left: 4px solid var(--pink); }
+.playlist-card.dp:hover { box-shadow: 0 4px 20px rgba(244,114,182,.15); }
+.playlist-card.tree { border-left: 4px solid var(--green); }
+.playlist-card.tree:hover { box-shadow: 0 4px 20px rgba(78,205,196,.15); }
+.playlist-card.sql { border-left: 4px solid var(--amber); }
+.playlist-card.sql:hover { box-shadow: 0 4px 20px rgba(212,160,23,.15); }
+.playlist-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.playlist-emoji { font-size: 28px; }
+.playlist-name { font-family: var(--font-heading); font-size: 16px; font-weight: 700; line-height: 1.4; }
+.playlist-stats { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+.playlist-difficulty { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ============================================================
+   PLAYLIST DETAIL SCREEN
+   ============================================================ */
+.playlist-detail-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+}
+.playlist-detail-title { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text); }
+.playlist-problem-list {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 60vh; overflow-y: auto;
+}
+.playlist-problem-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.playlist-problem-item:hover { transform: translateX(4px); border-color: var(--accent); box-shadow: var(--shadow); }
+.playlist-problem-item.completed { background: rgba(78,205,196,.06); border-color: rgba(78,205,196,.3); }
+.playlist-problem-item .problem-seq { font-family: var(--font-code); font-size: 13px; color: var(--text-dim); width: 30px; text-align: center; flex-shrink: 0; }
+.playlist-problem-item .problem-name { font-size: 14px; font-weight: 500; flex: 1; }
+.playlist-problem-item .problem-diff { flex-shrink: 0; }
+.playlist-problem-item .problem-status { font-size: 20px; flex-shrink: 0; width: 30px; text-align: center; }
+
+/* ============================================================
+   TAVERN BUTTON
+   ============================================================ */
+.bottom-actions { text-align: center; margin-top: 24px; }
+.tavern-btn {
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  padding: 10px 28px;
+  background: var(--surface);
+  border: 1px solid var(--amber);
+  border-radius: 24px;
+  color: var(--amber); cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.2s var(--ease);
+}
+.tavern-btn:hover { background: rgba(212,160,23,.08); box-shadow: 0 2px 12px rgba(212,160,23,.15); }
+.tavern-btn:active { background: rgba(212,160,23,.15); }
+
+/* ============================================================
+   LEVEL PATH (Kingdom)
+   ============================================================ */
+.level-path-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+}
+.back-btn {
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  padding: 8px 18px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 24px;
+  color: var(--text-dim); cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.2s var(--ease);
+}
+.back-btn:hover { border-color: var(--text); color: var(--text); }
+.kingdom-title-large { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text); }
+.kingdom-title-large span { font-family: var(--font-body); font-size: 12px; font-weight: 400; color: var(--text-dim); }
+
+.level-list {
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 60vh; overflow-y: auto; padding-right: 8px;
+}
+.level-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s var(--ease);
+  position: relative; overflow: hidden;
+}
+.level-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  transition: width 0.25s var(--ease);
+}
+.level-card.available { cursor: pointer; }
+.level-card.available::before { background: var(--accent); }
+.level-card.available:hover {
+  transform: translateX(5px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-light);
+}
+.level-card.available:hover::before { width: 6px; }
+.level-card.locked { background: var(--card); opacity: 0.55; }
+.level-card.locked::before { background: var(--border); }
+.level-card.completed {
+  background: rgba(78,205,196,.04);
+  border-color: rgba(78,205,196,.25);
+  opacity: 0.85;
+}
+.level-card.completed::before { background: var(--green); }
+
+.level-stage {
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-size: 13px; font-weight: 700;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); flex-shrink: 0; color: var(--text-dim);
+  line-height: 1.3; text-align: center;
+}
+.level-card.completed .level-stage {
+  border-color: var(--green); color: var(--green);
+}
+.level-info { flex: 1; }
+.level-num { font-family: var(--font-code); font-size: 11px; color: var(--text-dim); margin-bottom: 2px; }
+.level-title { font-family: var(--font-heading); font-size: 15px; font-weight: 600; }
+.level-meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.diff-badge {
+  font-family: var(--font-body); font-size: 10px; font-weight: 500;
+  padding: 3px 10px; border: 1px solid; border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+.diff-badge.easy { color: var(--green); border-color: var(--green); }
+.diff-badge.medium { color: var(--amber); border-color: var(--amber); }
+.diff-badge.hard { color: var(--red); border-color: var(--red); }
+.level-enemy { font-size: 28px; flex-shrink: 0; transition: all 0.5s ease; }
+.level-enemy.defeated { animation: defeatAnim 0.5s forwards; }
+.level-status { font-size: 24px; flex-shrink: 0; width: 40px; text-align: center; }
+
+/* ============================================================
+   BATTLE ARENA
+   ============================================================ */
+.enemy-bar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; margin-bottom: 18px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+.enemy-sprite {
+  font-size: 36px; transition: all 0.6s ease;
+}
+.enemy-sprite.defeated {
+  animation: defeatAnim 0.6s forwards;
+}
+.enemy-info { flex: 1; }
+.enemy-name { font-family: var(--font-heading); font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.enemy-hp-outer {
+  width: 100%; height: 10px; background: var(--code-bg);
+  border-radius: 5px; overflow: hidden;
+}
+.enemy-hp-inner {
+  height: 100%; width: 100%; background: var(--hp-green);
+  border-radius: 5px; transition: width 0.6s ease-out;
+}
+.enemy-hp-text { font-family: var(--font-code); font-size: 10px; color: var(--text-dim); margin-top: 3px; text-align: right; }
+
+.battle-panes {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px; margin-bottom: 18px;
+  min-height: 400px;
+}
+.pane {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.pane-header {
+  font-family: var(--font-heading); font-size: 14px; font-weight: 700;
+  padding: 12px 16px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+.pane-content { flex: 1; overflow-y: auto; padding: 16px; }
+.pane-content p { margin-bottom: 10px; font-size: 14px; line-height: 1.7; }
+.pane-content pre {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  font-family: var(--font-code); font-size: 13px; color: var(--text);
+  overflow-x: auto; margin-bottom: 10px;
+}
+.pane-content h3 { font-family: var(--font-heading); font-size: 16px; margin-bottom: 8px; color: var(--text); font-weight: 700; }
+.pane-content h4 { font-family: var(--font-body); font-size: 11px; font-weight: 600; margin: 10px 0 4px; color: var(--text); letter-spacing: 0.05em; text-transform: uppercase; }
+.pane-content ul { padding-left: 20px; margin-bottom: 10px; font-size: 13px; }
+.pane-content ul li { margin-bottom: 4px; }
+
+/* Code Editor */
+.editor-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.lang-select {
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  padding: 5px 10px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); cursor: pointer;
+}
+.tab-btns { display: flex; gap: 4px; }
+.tab-btn {
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  padding: 5px 12px; background: transparent;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-dim); cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.tab-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,107,107,.05); }
+
+.code-editor-wrapper {
+  display: flex; flex: 1; overflow: hidden;
+  background: var(--code-bg);
+}
+.line-numbers {
+  padding: 12px 10px; background: var(--code-bg);
+  font-family: var(--font-code); font-size: 13px;
+  line-height: 1.5; text-align: right;
+  border-right: 1px solid var(--border); min-width: 36px;
+  user-select: none; overflow: hidden; color: var(--text-dim);
+}
+.code-textarea {
+  flex: 1; background: transparent; color: var(--text);
+  border: none; padding: 12px 16px; outline: none;
+  font-family: var(--font-code); font-size: 13px;
+  line-height: 1.5; resize: none;
+}
+.code-textarea::placeholder { color: var(--text-dim); font-style: italic; }
+
+.console-panel {
+  border-top: 1px solid var(--border); display: none; flex: 1;
+}
+.console-panel.show { display: flex; flex-direction: column; }
+.console-content {
+  flex: 1; padding: 12px 16px; background: var(--code-bg);
+  font-family: var(--font-code); font-size: 12px;
+  color: var(--text-dim); overflow-y: auto;
+  max-height: 150px;
+}
+.console-line { margin-bottom: 3px; }
+.console-line.success { color: var(--green); }
+.console-line.error { color: var(--red); }
+.console-line.info { color: var(--text-dim); }
+.console-prompt { color: var(--accent); }
+
+/* Battle Actions */
+.battle-actions {
+  display: flex; gap: 12px; justify-content: center;
+}
+.pixel-btn {
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  padding: 12px 28px; border: 1px solid;
+  border-radius: 24px;
+  background: var(--surface); cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.2s var(--ease);
+}
+.pixel-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.pixel-btn:active { transform: translateY(0); }
+.pixel-btn.flee { color: var(--text-dim); border-color: var(--border); }
+.pixel-btn.flee:hover { border-color: var(--text); color: var(--text); }
+.pixel-btn.run { color: var(--cyan); border-color: var(--cyan); }
+.pixel-btn.run:hover { background: rgba(56,189,248,.08); box-shadow: 0 2px 12px rgba(56,189,248,.15); }
+.pixel-btn.attack {
+  color: var(--accent); border-color: var(--accent); font-size: 15px;
+}
+.pixel-btn.attack:hover {
+  background: rgba(255,107,107,.08);
+  box-shadow: 0 2px 16px rgba(255,107,107,.2);
+}
+.pixel-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+/* ============================================================
+   TAVERN MODAL
+   ============================================================ */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(26,28,46,0.5); z-index: 10000;
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.tavern-modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+  max-width: 700px; width: 90%; max-height: 70vh;
+  padding: 24px; overflow-y: auto;
+  animation: fadeIn 0.3s var(--ease);
+}
+.tavern-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tavern-title { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text); }
+.tavern-close {
+  font-family: var(--font-body); font-size: 18px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 50%; width: 36px; height: 36px;
+  color: var(--text-dim); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.tavern-close:hover { color: var(--red); border-color: var(--border); }
+.tavern-list { display: flex; flex-direction: column; gap: 6px; }
+.tavern-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--card);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.tavern-item:hover { border-color: var(--accent); transform: translateX(4px); box-shadow: var(--shadow-sm); }
+.tavern-item .enemy-icon { font-size: 24px; flex-shrink: 0; }
+.tavern-item .problem-id { font-family: var(--font-code); font-size: 12px; color: var(--accent); flex-shrink: 0; }
+.tavern-item .problem-name { font-size: 14px; font-weight: 500; flex: 1; }
+.tavern-item .kingdom-tag { font-size: 11px; color: var(--text-dim); }
+.tavern-empty { text-align: center; color: var(--text-dim); font-size: 14px; padding: 30px; font-style: italic; }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast-container { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 20000; pointer-events: none; }
+.toast {
+  padding: 14px 28px; border: 1px solid; border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  text-align: center;
+  animation: toastIn 0.3s var(--ease) forwards;
+  pointer-events: auto; box-shadow: var(--shadow-md);
+  letter-spacing: 0.02em;
+}
+.toast.mode { background: rgba(56,189,248,.08); border-color: var(--cyan); color: var(--cyan); }
+.toast.victory { background: rgba(78,205,196,.1); border-color: var(--green); color: var(--green); }
+.toast.defeat { background: rgba(255,107,107,.08); border-color: var(--red); color: var(--red); }
+.toast.xp { font-size: 11px; color: var(--amber); margin-top: 4px; }
+
+/* ============================================================
+   TEST CASES PANEL
+   ============================================================ */
+.test-cases-panel {
+  border-top: 1px solid var(--border);
+  background: var(--code-bg);
+  padding: 12px 16px;
+  font-family: var(--font-code); font-size: 12px;
+  color: var(--text-dim);
+  max-height: 180px;
+  overflow-y: auto;
+  display: none;
+}
+.test-cases-panel.show { display: block; }
+.test-cases-panel h4 {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  color: var(--amber); letter-spacing: 0.05em;
+  margin-bottom: 8px; text-transform: uppercase;
+}
+.test-case-item {
+  margin-bottom: 8px; padding: 8px 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.test-case-item .tc-title { font-size: 10px; font-weight: 600; color: var(--cyan); margin-bottom: 4px; }
+.test-case-item .tc-line { font-size: 11px; color: var(--text-dim); margin-bottom: 2px; }
+.test-case-item .tc-line.expected { color: var(--green); }
+.test-case-item .tc-line.unverified { color: var(--amber); }
+
+/* ============================================================
+   SOLUTION TOGGLE
+   ============================================================ */
+.solution-section {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.solution-toggle-btn {
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  padding: 6px 16px; background: var(--surface);
+  border: 1px solid var(--purple); border-radius: 24px;
+  color: var(--purple); cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.2s var(--ease);
+}
+.solution-toggle-btn:hover {
+  background: rgba(168,85,247,.08);
+  box-shadow: 0 2px 10px rgba(168,85,247,.15);
+}
+.solution-code {
+  display: none;
+  margin-top: 8px; padding: 12px 16px;
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-code); font-size: 12px;
+  color: var(--text);
+  overflow-x: auto; white-space: pre;
+  max-height: 300px; overflow-y: auto;
+}
+.solution-code.show { display: block; }
+
+/* Solution Language Selector */
+.solution-content { margin-top: 8px; display: none; }
+.solution-content.show { display: block; }
+.solution-lang-selector {
+  display: flex; gap: 6px; margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.solution-lang-btn {
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  padding: 4px 12px; background: transparent;
+  border: 1px solid var(--border); border-radius: 20px;
+  color: var(--text-dim); cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.solution-lang-btn:hover { border-color: var(--purple); color: var(--purple); }
+.solution-lang-btn.active { border-color: var(--purple); color: #fff; background: var(--purple); }
+
+/* Theme Label */
+.theme-label {
+  position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
+  z-index: 20001;
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  padding: 8px 20px; border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  animation: slideDown 0.3s var(--ease) forwards;
+  transition: opacity 0.3s ease;
+  letter-spacing: 0.03em;
+}
+
+/* Theme Transitions */
+body,
+.hud-bar,
+.mode-tab,
+.kingdom-card,
+.pane,
+.pane-header,
+.code-editor-wrapper,
+.code-textarea,
+.line-numbers,
+.console-panel,
+.console-content,
+.test-cases-panel,
+.level-card,
+.level-stage,
+.playlist-card,
+.adventure-stage,
+.adventure-stage .stage-number,
+.editor-toolbar,
+.enemy-bar,
+.modal-overlay,
+.tavern-modal,
+.tavern-item,
+.back-btn,
+.tavern-btn,
+.battle-actions .pixel-btn,
+.solution-code,
+.solution-section,
+.hp-bar-outer,
+.progress-bar-outer,
+.lang-select,
+.tab-btn,
+.diff-pill,
+.diff-badge,
+.playlist-problem-item {
+  transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Theme-specific overrides for Light theme text contrast */
+body.light-theme .code-textarea { color: #1a1a2e; }
+body.light-theme .code-textarea::placeholder { color: #888; }
+body.light-theme .console-content { color: #444; }
+body.light-theme .solution-code { color: #1a1a2e; }
+body.light-theme .pane-content pre { color: #1a1a2e; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .kingdom-grid { grid-template-columns: repeat(2, 1fr); }
+  .playlist-grid { grid-template-columns: repeat(2, 1fr); }
+  .battle-panes { grid-template-columns: 1fr; min-height: auto; }
+  .hud-bar { gap: 10px; font-size: 11px; }
+  .hud-stat .value { font-size: 11px; }
+  .screen-title { font-size: 22px; }
+  .mode-tab { font-size: 12px; padding: 10px 16px; }
+}
+@media (max-width: 500px) {
+  .kingdom-grid { grid-template-columns: 1fr; }
+  .playlist-grid { grid-template-columns: 1fr; }
+  .battle-actions { flex-direction: column; }
+  .pixel-btn { font-size: 13px; padding: 10px 20px; }
+  .mode-tab { font-size: 11px; padding: 8px 14px; }
+  .screen-title { font-size: 20px; }
+  .app-container { padding: 16px 14px 30px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================================
+     TAVERN MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="tavernOverlay">
+  <div class="tavern-modal">
+    <div class="tavern-header">
+      <span class="tavern-title">🏮 冒险者酒馆</span>
+      <button class="tavern-close" onclick="closeTavern()">✕</button>
+    </div>
+    <div id="tavernList" class="tavern-list"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP CONTAINER
+     ============================================================ -->
+<div class="app-container" id="app">
+
+  <!-- HUD BAR -->
+  <div class="hud-bar" id="hudBar">
+    <div class="hud-stat"><span class="icon">⚜️</span><span class="label">LV</span><span class="value" id="hudLv">1</span></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat">
+      <span class="icon">❤️</span>
+      <div class="hp-bar-outer"><div class="hp-bar-inner" id="hudHpBar"></div></div>
+      <span class="value" id="hudHp">100/100</span>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><span class="icon">⭐</span><span class="label">XP</span><span class="value" id="hudXp">0</span></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><span class="icon">🪙</span><span class="label">COIN</span><span class="value" id="hudCoin">0</span></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><span class="icon">⚔️</span><span class="label">击破</span><span class="value" id="hudDefeated">0</span></div>
+    <span class="hud-mode" id="hudMode">自由探索</span>
+    <button class="tavern-btn" onclick="openTavern()" style="margin:0;padding:6px 14px;font-size:7px;border-width:2px;">🏮 酒馆</button>
+    <button class="tavern-btn" onclick="cycleTheme()" style="margin:0;padding:6px 14px;font-size:7px;border-width:2px;border-color:var(--purple);color:var(--purple);">🎨 主题</button>
+  </div>
+
+  <!-- ============================================================
+       MODE TABS
+       ============================================================ -->
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-tab active" data-mode="free" onclick="switchMode('free')">🗺️ 自由探索</button>
+    <button class="mode-tab" data-mode="adventure" onclick="switchMode('adventure')">⚔️ 主线征程</button>
+    <button class="mode-tab" data-mode="trials" onclick="switchMode('trials')">🏆 秘境试炼</button>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: KINGDOM SELECT (Mode 1: Free Exploration)
+       ============================================================ -->
+  <div class="screen active" id="screenKingdom">
+    <h1 class="screen-title">SELECT YOUR QUEST<span class="subtitle">— 选择你的征途 —</span></h1>
+    <div class="kingdom-grid" id="kingdomGrid"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: ADVENTURE PATH (Mode 2: Main Quest)
+       ============================================================ -->
+  <div class="screen" id="screenAdventure">
+    <h1 class="screen-title">⚔️ 主线征程<span class="subtitle">— THE MAIN QUEST —</span></h1>
+    <div class="adventure-progress" id="adventureProgress"></div>
+    <div class="adventure-path" id="adventurePath"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: TRIALS PLAYLISTS (Mode 3: Secret Trials)
+       ============================================================ -->
+  <div class="screen" id="screenTrials">
+    <h1 class="screen-title">🏆 秘境试炼<span class="subtitle">— SECRET TRIALS —</span></h1>
+    <div class="playlist-grid" id="playlistGrid"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: PLAYLIST DETAIL
+       ============================================================ -->
+  <div class="screen" id="screenPlaylistDetail">
+    <div class="playlist-detail-header">
+      <button class="back-btn" onclick="goToTrials()">◀ 返回</button>
+      <div class="playlist-detail-title" id="playlistDetailTitle"></div>
+    </div>
+    <div class="playlist-problem-list" id="playlistProblemList"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: LEVEL PATH (from Kingdom)
+       ============================================================ -->
+  <div class="screen" id="screenLevels">
+    <div class="level-path-header">
+      <button class="back-btn" onclick="goToKingdomSelect()">◀ 返回</button>
+      <div class="kingdom-title-large" id="levelKingdomTitle"></div>
+    </div>
+    <div class="level-list" id="levelList"></div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN: BATTLE ARENA
+       ============================================================ -->
+  <div class="screen" id="screenBattle">
+    <div class="enemy-bar" id="enemyBar">
+      <span class="enemy-sprite" id="enemySprite">👾</span>
+      <div class="enemy-info">
+        <div class="enemy-name" id="enemyName">SLIME WARRIOR</div>
+        <div class="enemy-hp-outer"><div class="enemy-hp-inner" id="enemyHpBar"></div></div>
+        <div class="enemy-hp-text" id="enemyHpText">100 / 100</div>
+      </div>
+    </div>
+
+    <div class="battle-panes">
+      <div class="pane">
+        <div class="pane-header">📜 QUEST BRIEFING</div>
+        <div class="pane-content">
+          <div id="questBriefing"></div>
+          <div class="solution-section" id="solutionSection" style="display:none;">
+            <button class="solution-toggle-btn" onclick="toggleSolution()">💡 查看题解</button>
+            <div class="solution-content" id="solutionContent">
+              <div class="solution-lang-selector" id="solutionLangSelector">
+                <button class="solution-lang-btn active" onclick="switchSolutionLang('python')">[PY]</button>
+                <button class="solution-lang-btn" onclick="switchSolutionLang('javascript')">[JS]</button>
+                <button class="solution-lang-btn" onclick="switchSolutionLang('java')">[JAVA]</button>
+                <button class="solution-lang-btn" onclick="switchSolutionLang('cpp')">[CPP]</button>
+                <button class="solution-lang-btn" onclick="switchSolutionLang('go')">[GO]</button>
+              </div>
+              <div class="solution-code" id="solutionCode"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="pane-header">⚔️ CODING ARENA</div>
+        <div class="editor-toolbar">
+          <select class="lang-select" id="langSelect" onchange="onLanguageChange()">
+            <option value="python">🐍 Python 3</option>
+            <option value="java">☕ Java</option>
+            <option value="cpp">⚡ C++</option>
+            <option value="javascript">🟨 JavaScript</option>
+            <option value="go">🐹 Go</option>
+          </select>
+          <div class="tab-btns">
+            <button class="tab-btn active" onclick="switchTab('code')">📝 Code</button>
+            <button class="tab-btn" onclick="switchTab('console')">📺 Console</button>
+            <button class="tab-btn" onclick="switchTab('cases')">🧪 用例</button>
+          </div>
+        </div>
+        <div class="code-editor-wrapper" id="codeEditorWrapper">
+          <div class="line-numbers" id="lineNumbers">1</div>
+          <textarea class="code-textarea" id="codeEditor" placeholder="// Write your solution here..." spellcheck="false"></textarea>
+        </div>
+        <div class="console-panel" id="consolePanel">
+          <div class="console-content" id="consoleContent">
+            <div class="console-line info"><span class="console-prompt">></span> Console ready. Click RUN CODE to test your solution.</div>
+          </div>
+        </div>
+        <div class="test-cases-panel" id="testCasesPanel">
+          <h4>🧪 测试用例</h4>
+          <div id="testCasesContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="battle-actions">
+      <button class="pixel-btn flee" onclick="flee()">🏃 FLEE</button>
+      <button class="pixel-btn run" onclick="runCode()">▶ RUN CODE</button>
+      <button class="pixel-btn attack" onclick="attack()">⚔️ ATTACK!</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// DATA: KINGDOMS
+// ============================================================
+const KINGDOMS = [
+  { id: 'array',     name: '数组王国',     emoji: '🏰', color: '#ff8c42', bg: '#2a1810', glow: 'rgba(255,140,66,.25)',  total: 2344, easy: 567,  medium: 1245, hard: 532  },
+  { id: 'string',    name: '字符串王国',   emoji: '🔤', color: '#5eeadb', bg: '#0e2428', glow: 'rgba(94,234,219,.25)',  total: 890,  easy: 223,  medium: 467,  hard: 200  },
+  { id: 'math',      name: '数学王国',     emoji: '🧮', color: '#c084fc', bg: '#181028', glow: 'rgba(192,132,252,.25)',  total: 898,  easy: 210,  medium: 478,  hard: 210  },
+  { id: 'dp',        name: '动态规划王国', emoji: '🎯', color: '#f472b6', bg: '#281020', glow: 'rgba(244,114,182,.25)',  total: 657,  easy: 80,   medium: 386,  hard: 191  },
+  { id: 'tree',      name: '树之王国',     emoji: '🌳', color: '#4ade80', bg: '#101e14', glow: 'rgba(74,222,128,.25)',  total: 349,  easy: 55,   medium: 240,  hard: 54   },
+  { id: 'graph',     name: '图论王国',     emoji: '🗺️', color: '#fb923c', bg: '#241808', glow: 'rgba(251,146,60,.25)',  total: 237,  easy: 35,   medium: 152,  hard: 50   },
+  { id: 'search',    name: '搜索王国',     emoji: '🔍', color: '#facc15', bg: '#241e08', glow: 'rgba(250,204,21,.25)',  total: 522,  easy: 120,  medium: 310,  hard: 92   },
+  { id: 'greedy',    name: '贪心王国',     emoji: '⚔️', color: '#f87171', bg: '#281414', glow: 'rgba(248,113,113,.25)',  total: 1059, easy: 280,  medium: 589,  hard: 190  },
+  { id: 'datastruct',name: '数据结构王国', emoji: '🏗️', color: '#a78bfa', bg: '#1a1428', glow: 'rgba(167,139,250,.25)',  total: 1275, easy: 320,  medium: 710,  hard: 245  },
+  { id: 'database',  name: '数据库王国',   emoji: '🗄️', color: '#38bdf8', bg: '#0c1a28', glow: 'rgba(56,189,248,.25)',  total: 323,  easy: 152,  medium: 145,  hard: 26   },
+  { id: 'misc',      name: '杂项王国',     emoji: '🎲', color: '#94a3b8', bg: '#1a1c20', glow: 'rgba(148,163,184,.25)',  total: 906,  easy: 300,  medium: 450,  hard: 156  },
+  { id: 'chaos',     name: '混沌领域',     emoji: '🌪️', color: 'rainbow', total: 3971, easy: 500, medium: 2200, hard: 1271, chaos: true },
+];
+
+// ============================================================
+// DATA: LEVELS PER KINGDOM (Free Mode)
+// ============================================================
+const LEVEL_DATA = {
+  array: [
+    { number: 1,   title: '两数之和',               difficulty: 'easy',   enemy: '👾' },
+    { number: 15,  title: '三数之和',               difficulty: 'medium', enemy: '🐺' },
+    { number: 53,  title: '最大子数组和',           difficulty: 'medium', enemy: '🐺' },
+    { number: 121, title: '买卖股票的最佳时机',     difficulty: 'easy',   enemy: '👾' },
+    { number: 42,  title: '接雨水',                 difficulty: 'hard',   enemy: '🐉' },
+  ],
+  string: [
+    { number: 20,  title: '有效的括号',             difficulty: 'easy',   enemy: '👾' },
+    { number: 3,   title: '无重复字符的最长子串',   difficulty: 'medium', enemy: '🐺' },
+    { number: 5,   title: '最长回文子串',           difficulty: 'medium', enemy: '🐺' },
+    { number: 49,  title: '字母异位词分组',         difficulty: 'medium', enemy: '🐺' },
+  ],
+  math: [
+    { number: 9,   title: '回文数',                 difficulty: 'easy',   enemy: '👾' },
+    { number: 7,   title: '整数反转',               difficulty: 'medium', enemy: '🐺' },
+    { number: 50,  title: 'Pow(x, n)',              difficulty: 'medium', enemy: '🐺' },
+  ],
+  dp: [
+    { number: 70,  title: '爬楼梯',                 difficulty: 'easy',   enemy: '👾' },
+    { number: 198, title: '打家劫舍',               difficulty: 'medium', enemy: '🐺' },
+    { number: 300, title: '最长递增子序列',         difficulty: 'medium', enemy: '🐺' },
+    { number: 322, title: '零钱兑换',               difficulty: 'medium', enemy: '🐺' },
+  ],
+  tree: [
+    { number: 94,  title: '二叉树的中序遍历',       difficulty: 'easy',   enemy: '👾' },
+    { number: 104, title: '二叉树的最大深度',       difficulty: 'easy',   enemy: '👾' },
+    { number: 226, title: '翻转二叉树',             difficulty: 'easy',   enemy: '👾' },
+    { number: 236, title: '二叉树的最近公共祖先',   difficulty: 'medium', enemy: '🐺' },
+  ],
+  graph: [
+    { number: 200, title: '岛屿数量',               difficulty: 'medium', enemy: '🐺' },
+    { number: 207, title: '课程表',                 difficulty: 'medium', enemy: '🐺' },
+    { number: 210, title: '课程表 II',              difficulty: 'medium', enemy: '🐺' },
+  ],
+  search: [
+    { number: 704, title: '二分查找',               difficulty: 'easy',   enemy: '👾' },
+    { number: 33,  title: '搜索旋转排序数组',       difficulty: 'medium', enemy: '🐺' },
+    { number: 79,  title: '单词搜索',               difficulty: 'medium', enemy: '🐺' },
+  ],
+  greedy: [
+    { number: 455, title: '分发饼干',               difficulty: 'easy',   enemy: '👾' },
+    { number: 55,  title: '跳跃游戏',               difficulty: 'medium', enemy: '🐺' },
+    { number: 435, title: '无重叠区间',             difficulty: 'medium', enemy: '🐺' },
+  ],
+  datastruct: [
+    { number: 155, title: '最小栈',                 difficulty: 'medium', enemy: '🐺' },
+    { number: 146, title: 'LRU 缓存',               difficulty: 'medium', enemy: '🐺' },
+    { number: 208, title: '实现 Trie (前缀树)',     difficulty: 'medium', enemy: '🐺' },
+  ],
+  database: [
+    { number: 175, title: '组合两个表',             difficulty: 'easy',   enemy: '👾' },
+    { number: 176, title: '第二高的薪水',           difficulty: 'medium', enemy: '🐺' },
+    { number: 182, title: '查找重复的电子邮箱',     difficulty: 'easy',   enemy: '👾' },
+  ],
+  misc: [
+    { number: 136, title: '只出现一次的数字',       difficulty: 'easy',   enemy: '👾' },
+    { number: 169, title: '多数元素',               difficulty: 'easy',   enemy: '👾' },
+    { number: 202, title: '快乐数',                 difficulty: 'easy',   enemy: '👾' },
+  ],
+  chaos: [
+    { number: 4,   title: '寻找两个正序数组的中位数', difficulty: 'hard', enemy: '🐉' },
+    { number: 23,  title: '合并K个升序链表',         difficulty: 'hard', enemy: '🐉' },
+    { number: 76,  title: '最小覆盖子串',             difficulty: 'hard', enemy: '🐉' },
+    { number: 84,  title: '柱状图中最大的矩形',       difficulty: 'hard', enemy: '🐉' },
+  ],
+};
+
+// ============================================================
+// DATA: ADVENTURE MODE — 25 curated stages
+// ============================================================
+const ADVENTURE_STAGES = [
+  { stage: 1, number: 1,   title: '两数之和',                 difficulty: 'easy',   enemy: '👾', kingdom: 'array' },
+  { stage: 2, number: 20,  title: '有效的括号',               difficulty: 'easy',   enemy: '👾', kingdom: 'string' },
+  { stage: 3, number: 9,   title: '回文数',                   difficulty: 'easy',   enemy: '👾', kingdom: 'math' },
+  { stage: 4, number: 704, title: '二分查找',                 difficulty: 'easy',   enemy: '👾', kingdom: 'search' },
+  { stage: 5, number: 70,  title: '爬楼梯',                   difficulty: 'easy',   enemy: '👾', kingdom: 'dp' },
+  { stage: 6, number: 121, title: '买卖股票的最佳时机',       difficulty: 'easy',   enemy: '👾', kingdom: 'array' },
+  { stage: 7, number: 53,  title: '最大子数组和',             difficulty: 'medium', enemy: '🐺', kingdom: 'array' },
+  { stage: 8, number: 206, title: '反转链表',                 difficulty: 'easy',   enemy: '👾', kingdom: 'datastruct' },
+  { stage: 9, number: 3,   title: '无重复字符的最长子串',     difficulty: 'medium', enemy: '🐺', kingdom: 'string' },
+  { stage: 10, number: 94,  title: '二叉树的中序遍历',        difficulty: 'easy',   enemy: '👾', kingdom: 'tree' },
+  { stage: 11, number: 104, title: '二叉树的最大深度',        difficulty: 'easy',   enemy: '👾', kingdom: 'tree' },
+  { stage: 12, number: 200, title: '岛屿数量',                difficulty: 'medium', enemy: '🐺', kingdom: 'graph' },
+  { stage: 13, number: 146, title: 'LRU 缓存',                difficulty: 'medium', enemy: '🐺', kingdom: 'datastruct' },
+  { stage: 14, number: 15,  title: '三数之和',                difficulty: 'medium', enemy: '🐺', kingdom: 'array' },
+  { stage: 15, number: 49,  title: '字母异位词分组',          difficulty: 'medium', enemy: '🐺', kingdom: 'string' },
+  { stage: 16, number: 198, title: '打家劫舍',                difficulty: 'medium', enemy: '🐺', kingdom: 'dp' },
+  { stage: 17, number: 55,  title: '跳跃游戏',                difficulty: 'medium', enemy: '🐺', kingdom: 'greedy' },
+  { stage: 18, number: 33,  title: '搜索旋转排序数组',        difficulty: 'medium', enemy: '🐺', kingdom: 'search' },
+  { stage: 19, number: 236, title: '二叉树的最近公共祖先',    difficulty: 'medium', enemy: '🐺', kingdom: 'tree' },
+  { stage: 20, number: 300, title: '最长递增子序列',          difficulty: 'medium', enemy: '🐺', kingdom: 'dp' },
+  { stage: 21, number: 207, title: '课程表',                  difficulty: 'medium', enemy: '🐺', kingdom: 'graph' },
+  { stage: 22, number: 322, title: '零钱兑换',                difficulty: 'medium', enemy: '🐺', kingdom: 'dp' },
+  { stage: 23, number: 42,  title: '接雨水',                  difficulty: 'hard',   enemy: '🐉', kingdom: 'array' },
+  { stage: 24, number: 76,  title: '最小覆盖子串',            difficulty: 'hard',   enemy: '🐉', kingdom: 'chaos' },
+  { stage: 25, number: 4,   title: '寻找两个正序数组的中位数', difficulty: 'hard',  enemy: '🐉', kingdom: 'chaos' },
+];
+
+// ============================================================
+// DATA: SECRET TRIALS — 6 Playlists
+// ============================================================
+const PLAYLISTS = [
+  {
+    id: 'hot100',
+    name: 'Hot 100',
+    emoji: '🔥',
+    cssClass: 'hot',
+    description: 'LeetCode 热门 100 题',
+    easy: 3, medium: 4, hard: 1,
+    problems: [
+      { seq: 1, number: 1,   title: '两数之和',               difficulty: 'easy' },
+      { seq: 2, number: 20,  title: '有效的括号',             difficulty: 'easy' },
+      { seq: 3, number: 53,  title: '最大子数组和',           difficulty: 'medium' },
+      { seq: 4, number: 121, title: '买卖股票的最佳时机',     difficulty: 'easy' },
+      { seq: 5, number: 3,   title: '无重复字符的最长子串',   difficulty: 'medium' },
+      { seq: 6, number: 200, title: '岛屿数量',               difficulty: 'medium' },
+      { seq: 7, number: 70,  title: '爬楼梯',                 difficulty: 'easy' },
+      { seq: 8, number: 42,  title: '接雨水',                 difficulty: 'hard' },
+    ],
+  },
+  {
+    id: 'sword',
+    name: '剑指 Offer',
+    emoji: '🗡️',
+    cssClass: 'sword',
+    description: '剑指 Offer 经典面试题',
+    easy: 2, medium: 3, hard: 1,
+    problems: [
+      { seq: 1, number: 9,   title: '回文数',                 difficulty: 'easy' },
+      { seq: 2, number: 206, title: '反转链表',               difficulty: 'easy' },
+      { seq: 3, number: 15,  title: '三数之和',               difficulty: 'medium' },
+      { seq: 4, number: 146, title: 'LRU 缓存',               difficulty: 'medium' },
+      { seq: 5, number: 236, title: '二叉树的最近公共祖先',   difficulty: 'medium' },
+      { seq: 6, number: 4,   title: '寻找两个正序数组的中位数', difficulty: 'hard' },
+    ],
+  },
+  {
+    id: 'interview',
+    name: '面试精选',
+    emoji: '💎',
+    cssClass: 'diamond',
+    description: '大厂面试高频考题',
+    easy: 2, medium: 3, hard: 1,
+    problems: [
+      { seq: 1, number: 94,  title: '二叉树的中序遍历',       difficulty: 'easy' },
+      { seq: 2, number: 104, title: '二叉树的最大深度',       difficulty: 'easy' },
+      { seq: 3, number: 55,  title: '跳跃游戏',               difficulty: 'medium' },
+      { seq: 4, number: 33,  title: '搜索旋转排序数组',       difficulty: 'medium' },
+      { seq: 5, number: 300, title: '最长递增子序列',         difficulty: 'medium' },
+      { seq: 6, number: 76,  title: '最小覆盖子串',           difficulty: 'hard' },
+    ],
+  },
+  {
+    id: 'dp',
+    name: '动态规划专题',
+    emoji: '⚡',
+    cssClass: 'dp',
+    description: '动态规划经典题型精练',
+    easy: 1, medium: 4, hard: 0,
+    problems: [
+      { seq: 1, number: 70,  title: '爬楼梯',                 difficulty: 'easy' },
+      { seq: 2, number: 53,  title: '最大子数组和',           difficulty: 'medium' },
+      { seq: 3, number: 198, title: '打家劫舍',               difficulty: 'medium' },
+      { seq: 4, number: 300, title: '最长递增子序列',         difficulty: 'medium' },
+      { seq: 5, number: 322, title: '零钱兑换',               difficulty: 'medium' },
+    ],
+  },
+  {
+    id: 'tree',
+    name: '二叉树合集',
+    emoji: '🌳',
+    cssClass: 'tree',
+    description: '二叉树核心题目合集',
+    easy: 3, medium: 2, hard: 0,
+    problems: [
+      { seq: 1, number: 94,  title: '二叉树的中序遍历',       difficulty: 'easy' },
+      { seq: 2, number: 104, title: '二叉树的最大深度',       difficulty: 'easy' },
+      { seq: 3, number: 226, title: '翻转二叉树',             difficulty: 'easy' },
+      { seq: 4, number: 236, title: '二叉树的最近公共祖先',   difficulty: 'medium' },
+      { seq: 5, number: 208, title: '实现 Trie (前缀树)',     difficulty: 'medium' },
+    ],
+  },
+  {
+    id: 'sql',
+    name: 'SQL 必刷',
+    emoji: '📊',
+    cssClass: 'sql',
+    description: 'SQL 数据库核心查询',
+    easy: 3, medium: 2, hard: 0,
+    problems: [
+      { seq: 1, number: 175, title: '组合两个表',             difficulty: 'easy' },
+      { seq: 2, number: 176, title: '第二高的薪水',           difficulty: 'medium' },
+      { seq: 3, number: 182, title: '查找重复的电子邮箱',     difficulty: 'easy' },
+      { seq: 4, number: 183, title: '从不订购的客户',         difficulty: 'easy' },
+      { seq: 5, number: 184, title: '部门工资最高的员工',     difficulty: 'medium' },
+    ],
+  },
+];
+
+// ============================================================
+// PROBLEM DETAILS
+// ============================================================
+const PROBLEM_DETAILS = {
+  '1': {
+    title: '1. 两数之和',
+    difficulty: 'easy',
+    enemy: '👾',
+    enemyName: 'SLIME WARRIOR',
+    description: `<h3>1. 两数之和 <span class="diff-badge easy">简单</span></h3>
+<p>给定一个整数数组 <code>nums</code> 和一个整数目标值 <code>target</code>，请你在该数组中找出<strong>和为目标值</strong> <code>target</code> 的那两个整数，并返回它们的数组下标。</p>
+<p>你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素。你可以按任意顺序返回答案。</p>
+<h4>示例 1:</h4>
+<pre>输入: nums = [2,7,11,15], target = 9
+输出: [0,1]
+解释: nums[0] + nums[1] == 9</pre>
+<h4>示例 2:</h4>
+<pre>输入: nums = [3,2,4], target = 6
+输出: [1,2]</pre>
+<h4>示例 3:</h4>
+<pre>输入: nums = [3,3], target = 6
+输出: [0,1]</pre>`,
+    solutions: {
+      python: `class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        // 在此编写你的代码
+        return null;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        // 在此编写你的代码
+        return {};
+    }
+};`,
+      javascript: `var twoSum = function(nums, target) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func twoSum(nums []int, target int) []int {
+    // 在此编写你的代码
+    return nil
+}`,
+    },
+    testCases: [
+      { input: "nums = [2,7,11,15], target = 9", expected: "[0,1]", explanation: "nums[0] + nums[1] == 9" },
+      { input: "nums = [3,2,4], target = 6", expected: "[1,2]" },
+    ],
+    reference: {
+      python: `class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        seen = {}
+        for i, num in enumerate(nums):
+            complement = target - num
+            if complement in seen:
+                return [seen[complement], i]
+            seen[num] = i
+        return []`,
+      javascript: `var twoSum = function(nums, target) {
+    const seen = new Map();
+    for (let i = 0; i < nums.length; i++) {
+        const complement = target - nums[i];
+        if (seen.has(complement)) {
+            return [seen.get(complement), i];
+        }
+        seen.set(nums[i], i);
+    }
+    return [];
+};`,
+      java: `class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        Map<Integer, Integer> seen = new HashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            int complement = target - nums[i];
+            if (seen.containsKey(complement)) {
+                return new int[]{seen.get(complement), i};
+            }
+            seen.put(nums[i], i);
+        }
+        return new int[]{};
+    }
+}`,
+      cpp: `class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> seen;
+        for (int i = 0; i < nums.size(); i++) {
+            int complement = target - nums[i];
+            if (seen.count(complement)) {
+                return {seen[complement], i};
+            }
+            seen[nums[i]] = i;
+        }
+        return {};
+    }
+};`,
+      go: `func twoSum(nums []int, target int) []int {
+    seen := make(map[int]int)
+    for i, num := range nums {
+        complement := target - num
+        if j, ok := seen[complement]; ok {
+            return []int{j, i}
+        }
+        seen[num] = i
+    }
+    return nil
+}`,
+    },
+  },
+  '20': {
+    title: '20. 有效的括号',
+    difficulty: 'easy',
+    enemy: '👾',
+    enemyName: 'SHADOW MIMIC',
+    description: `<h3>20. 有效的括号 <span class="diff-badge easy">简单</span></h3>
+<p>给定一个只包括 <code>'('</code>、<code>')'</code>、<code>'{'</code>、<code>'}'</code>、<code>'['</code>、<code>']'</code> 的字符串 <code>s</code>，判断字符串是否有效。</p>
+<p>有效字符串需满足：左括号必须用相同类型的右括号闭合；左括号必须以正确的顺序闭合；每个右括号都有一个对应的相同类型的左括号。</p>
+<h4>示例 1:</h4>
+<pre>输入: s = "()"
+输出: true</pre>
+<h4>示例 2:</h4>
+<pre>输入: s = "()[]{}"
+输出: true</pre>
+<h4>示例 3:</h4>
+<pre>输入: s = "(]"
+输出: false</pre>`,
+    solutions: {
+      python: `class Solution:
+    def isValid(self, s: str) -> bool:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public boolean isValid(String s) {
+        // 在此编写你的代码
+        return false;
+    }
+}`,
+      javascript: `var isValid = function(s) {
+    // 在此编写你的代码
+    
+};`,
+    },
+    testCases: [
+      { input: 's = "()"', expected: "true" },
+      { input: 's = "()[]{}"', expected: "true" },
+      { input: 's = "(]"', expected: "false" },
+    ],
+    reference: {
+      python: `class Solution:
+    def isValid(self, s: str) -> bool:
+        stack = []
+        pairs = {')': '(', '}': '{', ']': '['}
+        for c in s:
+            if c in pairs:
+                if not stack or stack[-1] != pairs[c]:
+                    return False
+                stack.pop()
+            else:
+                stack.append(c)
+        return not stack`,
+      javascript: `var isValid = function(s) {
+    const stack = [];
+    const pairs = {')': '(', '}': '{', ']': '['};
+    for (const c of s) {
+        if (c in pairs) {
+            if (stack.length === 0 || stack[stack.length - 1] !== pairs[c]) {
+                return false;
+            }
+            stack.pop();
+        } else {
+            stack.push(c);
+        }
+    }
+    return stack.length === 0;
+};`,
+      java: `class Solution {
+    public boolean isValid(String s) {
+        Stack<Character> stack = new Stack<>();
+        for (char c : s.toCharArray()) {
+            if (c == '(' || c == '{' || c == '[') {
+                stack.push(c);
+            } else {
+                if (stack.isEmpty()) return false;
+                char top = stack.pop();
+                if (c == ')' && top != '(') return false;
+                if (c == '}' && top != '{') return false;
+                if (c == ']' && top != '[') return false;
+            }
+        }
+        return stack.isEmpty();
+    }
+}`,
+      cpp: `class Solution {
+public:
+    bool isValid(string s) {
+        stack<char> st;
+        for (char c : s) {
+            if (c == '(' || c == '{' || c == '[') {
+                st.push(c);
+            } else {
+                if (st.empty()) return false;
+                char top = st.top(); st.pop();
+                if (c == ')' && top != '(') return false;
+                if (c == '}' && top != '{') return false;
+                if (c == ']' && top != '[') return false;
+            }
+        }
+        return st.empty();
+    }
+};`,
+      go: `func isValid(s string) bool {
+    stack := []rune{}
+    pairs := map[rune]rune{')': '(', '}': '{', ']': '['}
+    for _, c := range s {
+        if open, ok := pairs[c]; ok {
+            if len(stack) == 0 || stack[len(stack)-1] != open {
+                return false
+            }
+            stack = stack[:len(stack)-1]
+        } else {
+            stack = append(stack, c)
+        }
+    }
+    return len(stack) == 0
+}`,
+    },
+  },
+  '53': {
+    title: '53. 最大子数组和',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'DARK WOLF',
+    description: `<h3>53. 最大子数组和 <span class="diff-badge medium">中等</span></h3>
+<p>给你一个整数数组 <code>nums</code>，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。</p>
+<p><strong>子数组</strong>是数组中的一个连续部分。</p>
+<h4>示例 1:</h4>
+<pre>输入: nums = [-2,1,-3,4,-1,2,1,-5,4]
+输出: 6
+解释: 连续子数组 [4,-1,2,1] 的和最大，为 6</pre>
+<h4>示例 2:</h4>
+<pre>输入: nums = [1]
+输出: 1</pre>
+<h4>示例 3:</h4>
+<pre>输入: nums = [5,4,-1,7,8]
+输出: 23</pre>`,
+    solutions: {
+      python: `class Solution:
+    def maxSubArray(self, nums: List[int]) -> int:
+        # 在此编写你的代码
+        pass`,
+      javascript: `var maxSubArray = function(nums) {
+    // 在此编写你的代码
+    
+};`,
+    },
+    testCases: [
+      { input: "nums = [-2,1,-3,4,-1,2,1,-5,4]", expected: "6", explanation: "连续子数组 [4,-1,2,1] 的和最大" },
+      { input: "nums = [1]", expected: "1" },
+      { input: "nums = [5,4,-1,7,8]", expected: "23" },
+    ],
+    reference: {
+      python: `class Solution:
+    def maxSubArray(self, nums: List[int]) -> int:
+        max_sum = nums[0]
+        cur_sum = nums[0]
+        for num in nums[1:]:
+            cur_sum = max(num, cur_sum + num)
+            max_sum = max(max_sum, cur_sum)
+        return max_sum`,
+      javascript: `var maxSubArray = function(nums) {
+    let maxSum = nums[0];
+    let curSum = nums[0];
+    for (let i = 1; i < nums.length; i++) {
+        curSum = Math.max(nums[i], curSum + nums[i]);
+        maxSum = Math.max(maxSum, curSum);
+    }
+    return maxSum;
+};`,
+      java: `class Solution {
+    public int maxSubArray(int[] nums) {
+        int maxSum = nums[0];
+        int curSum = nums[0];
+        for (int i = 1; i < nums.length; i++) {
+            curSum = Math.max(nums[i], curSum + nums[i]);
+            maxSum = Math.max(maxSum, curSum);
+        }
+        return maxSum;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int maxSum = nums[0];
+        int curSum = nums[0];
+        for (int i = 1; i < nums.size(); i++) {
+            curSum = max(nums[i], curSum + nums[i]);
+            maxSum = max(maxSum, curSum);
+        }
+        return maxSum;
+    }
+};`,
+      go: `func maxSubArray(nums []int) int {
+    maxSum := nums[0]
+    curSum := nums[0]
+    for i := 1; i < len(nums); i++ {
+        if nums[i] > curSum + nums[i] {
+            curSum = nums[i]
+        } else {
+            curSum = curSum + nums[i]
+        }
+        if curSum > maxSum {
+            maxSum = curSum
+        }
+    }
+    return maxSum
+}`,
+    },
+  },
+  '146': {
+    title: '146. LRU 缓存',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'MEMORY WRAITH',
+    description: `<h3>146. LRU 缓存 <span class="diff-badge medium">中等</span></h3>
+<p>请你设计并实现一个满足 <strong>LRU (最近最少使用)</strong> 缓存约束的数据结构。</p>
+<p>实现 <code>LRUCache</code> 类：</p>
+<ul>
+  <li><code>LRUCache(int capacity)</code> 以正整数作为容量初始化 LRU 缓存</li>
+  <li><code>int get(int key)</code> 如果关键字存在则返回值，否则返回 -1</li>
+  <li><code>void put(int key, int value)</code> 如果 key 存在则更新值；不存在则插入。若超出容量，逐出最久未使用的关键字。</li>
+</ul>
+<p>函数 <code>get</code> 和 <code>put</code> 必须以 O(1) 的平均时间复杂度运行。</p>`,
+    solutions: {
+      python: `class LRUCache:
+
+    def __init__(self, capacity: int):
+        # 在此编写你的代码
+        pass
+
+    def get(self, key: int) -> int:
+        # 在此编写你的代码
+        pass
+
+    def put(self, key: int, value: int) -> None:
+        # 在此编写你的代码
+        pass`,
+    },
+    testCases: [
+      { input: "LRUCache(2); put(1,1); put(2,2); get(1)", expected: "1" },
+      { input: "put(3,3); get(2)", expected: "-1 (已逐出)" },
+    ],
+    reference: {
+      python: `class Node:
+    def __init__(self, key=0, val=0):
+        self.key = key
+        self.val = val
+        self.prev = None
+        self.next = None
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.cache = {}
+        self.head = Node()
+        self.tail = Node()
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _remove(self, node):
+        node.prev.next = node.next
+        node.next.prev = node.prev
+
+    def _add(self, node):
+        node.prev = self.head
+        node.next = self.head.next
+        self.head.next.prev = node
+        self.head.next = node
+
+    def get(self, key: int) -> int:
+        if key not in self.cache:
+            return -1
+        node = self.cache[key]
+        self._remove(node)
+        self._add(node)
+        return node.val
+
+    def put(self, key: int, value: int) -> None:
+        if key in self.cache:
+            self._remove(self.cache[key])
+        node = Node(key, value)
+        self.cache[key] = node
+        self._add(node)
+        if len(self.cache) > self.capacity:
+            lru = self.tail.prev
+            self._remove(lru)
+            del self.cache[lru.key]`,
+      javascript: `class Node {
+    constructor(key = 0, val = 0) {
+        this.key = key;
+        this.val = val;
+        this.prev = null;
+        this.next = null;
+    }
+}
+
+class LRUCache {
+    constructor(capacity) {
+        this.capacity = capacity;
+        this.cache = new Map();
+        this.head = new Node();
+        this.tail = new Node();
+        this.head.next = this.tail;
+        this.tail.prev = this.head;
+    }
+
+    _remove(node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    _add(node) {
+        node.prev = this.head;
+        node.next = this.head.next;
+        this.head.next.prev = node;
+        this.head.next = node;
+    }
+
+    get(key) {
+        if (!this.cache.has(key)) return -1;
+        const node = this.cache.get(key);
+        this._remove(node);
+        this._add(node);
+        return node.val;
+    }
+
+    put(key, value) {
+        if (this.cache.has(key)) {
+            this._remove(this.cache.get(key));
+        }
+        const node = new Node(key, value);
+        this.cache.set(key, node);
+        this._add(node);
+        if (this.cache.size > this.capacity) {
+            const lru = this.tail.prev;
+            this._remove(lru);
+            this.cache.delete(lru.key);
+        }
+    }
+}`,
+      java: `class LRUCache {
+    class Node {
+        int key, val;
+        Node prev, next;
+        Node(int k, int v) { key = k; val = v; }
+    }
+
+    private int capacity;
+    private Map<Integer, Node> cache;
+    private Node head, tail;
+
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        cache = new HashMap<>();
+        head = new Node(0, 0);
+        tail = new Node(0, 0);
+        head.next = tail;
+        tail.prev = head;
+    }
+
+    private void remove(Node node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    private void add(Node node) {
+        node.prev = head;
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+    }
+
+    public int get(int key) {
+        if (!cache.containsKey(key)) return -1;
+        Node node = cache.get(key);
+        remove(node);
+        add(node);
+        return node.val;
+    }
+
+    public void put(int key, int value) {
+        if (cache.containsKey(key)) {
+            remove(cache.get(key));
+        }
+        Node node = new Node(key, value);
+        cache.put(key, node);
+        add(node);
+        if (cache.size() > capacity) {
+            Node lru = tail.prev;
+            remove(lru);
+            cache.remove(lru.key);
+        }
+    }
+}`,
+      cpp: `class LRUCache {
+    struct Node {
+        int key, val;
+        Node *prev, *next;
+        Node(int k = 0, int v = 0) : key(k), val(v), prev(nullptr), next(nullptr) {}
+    };
+
+    int capacity;
+    unordered_map<int, Node*> cache;
+    Node *head, *tail;
+
+    void remove(Node* node) {
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+    }
+
+    void add(Node* node) {
+        node->prev = head;
+        node->next = head->next;
+        head->next->prev = node;
+        head->next = node;
+    }
+
+public:
+    LRUCache(int capacity) : capacity(capacity) {
+        head = new Node();
+        tail = new Node();
+        head->next = tail;
+        tail->prev = head;
+    }
+
+    int get(int key) {
+        if (!cache.count(key)) return -1;
+        Node* node = cache[key];
+        remove(node);
+        add(node);
+        return node->val;
+    }
+
+    void put(int key, int value) {
+        if (cache.count(key)) {
+            remove(cache[key]);
+        }
+        Node* node = new Node(key, value);
+        cache[key] = node;
+        add(node);
+        if (cache.size() > capacity) {
+            Node* lru = tail->prev;
+            remove(lru);
+            cache.erase(lru->key);
+            delete lru;
+        }
+    }
+};`,
+      go: `type Node struct {
+    key, val int
+    prev, next *Node
+}
+
+type LRUCache struct {
+    capacity int
+    cache    map[int]*Node
+    head, tail *Node
+}
+
+func Constructor(capacity int) LRUCache {
+    head := &Node{}
+    tail := &Node{}
+    head.next = tail
+    tail.prev = head
+    return LRUCache{
+        capacity: capacity,
+        cache:    make(map[int]*Node),
+        head:     head,
+        tail:     tail,
+    }
+}
+
+func (this *LRUCache) remove(node *Node) {
+    node.prev.next = node.next
+    node.next.prev = node.prev
+}
+
+func (this *LRUCache) add(node *Node) {
+    node.prev = this.head
+    node.next = this.head.next
+    this.head.next.prev = node
+    this.head.next = node
+}
+
+func (this *LRUCache) Get(key int) int {
+    if node, ok := this.cache[key]; ok {
+        this.remove(node)
+        this.add(node)
+        return node.val
+    }
+    return -1
+}
+
+func (this *LRUCache) Put(key int, value int) {
+    if node, ok := this.cache[key]; ok {
+        this.remove(node)
+    }
+    node := &Node{key: key, val: value}
+    this.cache[key] = node
+    this.add(node)
+    if len(this.cache) > this.capacity {
+        lru := this.tail.prev
+        this.remove(lru)
+        delete(this.cache, lru.key)
+    }
+}`,
+    },
+  },
+  '200': {
+    title: '200. 岛屿数量',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'ABYSSAL TERROR',
+    description: `<h3>200. 岛屿数量 <span class="diff-badge medium">中等</span></h3>
+<p>给你一个由 <code>'1'</code>（陆地）和 <code>'0'</code>（水）组成的二维网格，请你计算网格中岛屿的数量。</p>
+<p>岛屿总是被水包围，并且每座岛屿只能由水平方向和/或竖直方向上相邻的陆地连接形成。</p>
+<h4>示例 1:</h4>
+<pre>输入: grid = [
+  ["1","1","1","1","0"],
+  ["1","1","0","1","0"],
+  ["1","1","0","0","0"],
+  ["0","0","0","0","0"]
+]
+输出: 1</pre>
+<h4>示例 2:</h4>
+<pre>输入: grid = [
+  ["1","1","0","0","0"],
+  ["1","1","0","0","0"],
+  ["0","0","1","0","0"],
+  ["0","0","0","1","1"]
+]
+输出: 3</pre>`,
+    solutions: {
+      python: `class Solution:
+    def numIslands(self, grid: List[List[str]]) -> int:
+        # 在此编写你的代码
+        pass`,
+      javascript: `var numIslands = function(grid) {
+    // 在此编写你的代码
+    
+};`,
+    },
+    testCases: [
+      { input: 'grid = [["1","1","1","1","0"],["1","1","0","1","0"],["1","1","0","0","0"],["0","0","0","0","0"]]', expected: "1" },
+      { input: 'grid = [["1","1","0","0","0"],["1","1","0","0","0"],["0","0","1","0","0"],["0","0","0","1","1"]]', expected: "3" },
+    ],
+    reference: {
+      python: `class Solution:
+    def numIslands(self, grid: List[List[str]]) -> int:
+        if not grid:
+            return 0
+        rows, cols = len(grid), len(grid[0])
+        count = 0
+
+        def dfs(r, c):
+            if r < 0 or r >= rows or c < 0 or c >= cols:
+                return
+            if grid[r][c] != '1':
+                return
+            grid[r][c] = '0'
+            dfs(r+1, c); dfs(r-1, c)
+            dfs(r, c+1); dfs(r, c-1)
+
+        for i in range(rows):
+            for j in range(cols):
+                if grid[i][j] == '1':
+                    count += 1
+                    dfs(i, j)
+        return count`,
+      javascript: `var numIslands = function(grid) {
+    if (!grid || grid.length === 0) return 0;
+    const rows = grid.length;
+    const cols = grid[0].length;
+    let count = 0;
+
+    const dfs = (r, c) => {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+        if (grid[r][c] !== '1') return;
+        grid[r][c] = '0';
+        dfs(r + 1, c);
+        dfs(r - 1, c);
+        dfs(r, c + 1);
+        dfs(r, c - 1);
+    };
+
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            if (grid[i][j] === '1') {
+                count++;
+                dfs(i, j);
+            }
+        }
+    }
+    return count;
+};`,
+      java: `class Solution {
+    public int numIslands(char[][] grid) {
+        if (grid == null || grid.length == 0) return 0;
+        int rows = grid.length, cols = grid[0].length;
+        int count = 0;
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == '1') {
+                    count++;
+                    dfs(grid, i, j);
+                }
+            }
+        }
+        return count;
+    }
+
+    private void dfs(char[][] grid, int r, int c) {
+        if (r < 0 || r >= grid.length || c < 0 || c >= grid[0].length) return;
+        if (grid[r][c] != '1') return;
+        grid[r][c] = '0';
+        dfs(grid, r + 1, c);
+        dfs(grid, r - 1, c);
+        dfs(grid, r, c + 1);
+        dfs(grid, r, c - 1);
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int numIslands(vector<vector<char>>& grid) {
+        if (grid.empty()) return 0;
+        int rows = grid.size(), cols = grid[0].size();
+        int count = 0;
+
+        function<void(int,int)> dfs = [&](int r, int c) {
+            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+            if (grid[r][c] != '1') return;
+            grid[r][c] = '0';
+            dfs(r + 1, c);
+            dfs(r - 1, c);
+            dfs(r, c + 1);
+            dfs(r, c - 1);
+        };
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == '1') {
+                    count++;
+                    dfs(i, j);
+                }
+            }
+        }
+        return count;
+    }
+};`,
+      go: `func numIslands(grid [][]byte) int {
+    if len(grid) == 0 { return 0 }
+    rows, cols := len(grid), len(grid[0])
+    count := 0
+
+    var dfs func(int, int)
+    dfs = func(r, c int) {
+        if r < 0 || r >= rows || c < 0 || c >= cols { return }
+        if grid[r][c] != '1' { return }
+        grid[r][c] = '0'
+        dfs(r+1, c)
+        dfs(r-1, c)
+        dfs(r, c+1)
+        dfs(r, c-1)
+    }
+
+    for i := 0; i < rows; i++ {
+        for j := 0; j < cols; j++ {
+            if grid[i][j] == '1' {
+                count++
+                dfs(i, j)
+            }
+        }
+    }
+    return count
+}`,
+    },
+  },
+  '42': {
+    title: '42. 接雨水',
+    difficulty: 'hard',
+    enemy: '🐉',
+    enemyName: 'STORM DRAGON',
+    description: `<h3>42. 接雨水 <span class="diff-badge hard">困难</span></h3>
+<p>给定 <code>n</code> 个非负整数表示每个宽度为 <code>1</code> 的柱子的高度图，计算按此排列的柱子，下雨之后能接多少雨水。</p>
+<h4>示例 1:</h4>
+<pre>输入: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+输出: 6
+解释: 上面是由数组 [0,1,0,2,1,0,1,3,2,1,2,1]
+表示的高度图，可以接 6 个单位的雨水。</pre>
+<h4>示例 2:</h4>
+<pre>输入: height = [4,2,0,3,2,5]
+输出: 9</pre>`,
+    solutions: {
+      python: `class Solution:
+    def trap(self, height: List[int]) -> int:
+        # 在此编写你的代码
+        pass`,
+    },
+    testCases: [
+      { input: "height = [0,1,0,2,1,0,1,3,2,1,2,1]", expected: "6" },
+      { input: "height = [4,2,0,3,2,5]", expected: "9" },
+    ],
+    reference: {
+      python: `class Solution:
+    def trap(self, height: List[int]) -> int:
+        if not height:
+            return 0
+        l, r = 0, len(height) - 1
+        left_max = height[l]
+        right_max = height[r]
+        water = 0
+
+        while l < r:
+            if left_max < right_max:
+                l += 1
+                left_max = max(left_max, height[l])
+                water += left_max - height[l]
+            else:
+                r -= 1
+                right_max = max(right_max, height[r])
+                water += right_max - height[r]
+        return water`,
+      javascript: `var trap = function(height) {
+    if (height.length === 0) return 0;
+    let l = 0, r = height.length - 1;
+    let leftMax = height[l], rightMax = height[r];
+    let water = 0;
+
+    while (l < r) {
+        if (leftMax < rightMax) {
+            l++;
+            leftMax = Math.max(leftMax, height[l]);
+            water += leftMax - height[l];
+        } else {
+            r--;
+            rightMax = Math.max(rightMax, height[r]);
+            water += rightMax - height[r];
+        }
+    }
+    return water;
+};`,
+      java: `class Solution {
+    public int trap(int[] height) {
+        if (height.length == 0) return 0;
+        int l = 0, r = height.length - 1;
+        int leftMax = height[l], rightMax = height[r];
+        int water = 0;
+
+        while (l < r) {
+            if (leftMax < rightMax) {
+                l++;
+                leftMax = Math.max(leftMax, height[l]);
+                water += leftMax - height[l];
+            } else {
+                r--;
+                rightMax = Math.max(rightMax, height[r]);
+                water += rightMax - height[r];
+            }
+        }
+        return water;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int trap(vector<int>& height) {
+        if (height.empty()) return 0;
+        int l = 0, r = height.size() - 1;
+        int leftMax = height[l], rightMax = height[r];
+        int water = 0;
+
+        while (l < r) {
+            if (leftMax < rightMax) {
+                l++;
+                leftMax = max(leftMax, height[l]);
+                water += leftMax - height[l];
+            } else {
+                r--;
+                rightMax = max(rightMax, height[r]);
+                water += rightMax - height[r];
+            }
+        }
+        return water;
+    }
+};`,
+      go: `func trap(height []int) int {
+    if len(height) == 0 { return 0 }
+    l, r := 0, len(height)-1
+    leftMax, rightMax := height[l], height[r]
+    water := 0
+
+    for l < r {
+        if leftMax < rightMax {
+            l++
+            if height[l] > leftMax {
+                leftMax = height[l]
+            }
+            water += leftMax - height[l]
+        } else {
+            r--
+            if height[r] > rightMax {
+                rightMax = height[r]
+            }
+            water += rightMax - height[r]
+        }
+    }
+    return water
+}`,
+    },
+  },
+  '206': {
+    title: '206. 反转链表',
+    difficulty: 'easy',
+    enemy: '👾',
+    enemyName: 'LINKED SHADE',
+    description: `<h3>206. 反转链表 <span class="diff-badge easy">简单</span></h3>
+<p>给你单链表的头节点 <code>head</code>，请你反转链表，并返回反转后的链表。</p>
+<h4>示例 1:</h4>
+<pre>输入: head = [1,2,3,4,5]
+输出: [5,4,3,2,1]</pre>
+<h4>示例 2:</h4>
+<pre>输入: head = [1,2]
+输出: [2,1]</pre>
+<h4>示例 3:</h4>
+<pre>输入: head = []
+输出: []</pre>`,
+    solutions: {
+      python: `class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        # 在此编写你的代码
+        pass`,
+      javascript: `var reverseList = function(head) {
+    // 在此编写你的代码
+    
+};`,
+    },
+    testCases: [
+      { input: "head = [1,2,3,4,5]", expected: "[5,4,3,2,1]" },
+      { input: "head = [1,2]", expected: "[2,1]" },
+      { input: "head = []", expected: "[]" },
+    ],
+    reference: {
+      python: `class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        prev = None
+        curr = head
+        while curr:
+            next_node = curr.next
+            curr.next = prev
+            prev = curr
+            curr = next_node
+        return prev`,
+      javascript: `var reverseList = function(head) {
+    let prev = null;
+    let curr = head;
+    while (curr) {
+        const next = curr.next;
+        curr.next = prev;
+        prev = curr;
+        curr = next;
+    }
+    return prev;
+};`,
+      java: `class Solution {
+    public ListNode reverseList(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        return prev;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        ListNode* prev = nullptr;
+        ListNode* curr = head;
+        while (curr) {
+            ListNode* next = curr->next;
+            curr->next = prev;
+            prev = curr;
+            curr = next;
+        }
+        return prev;
+    }
+};`,
+      go: `func reverseList(head *ListNode) *ListNode {
+    var prev *ListNode
+    curr := head
+    for curr != nil {
+        next := curr.Next
+        curr.Next = prev
+        prev = curr
+        curr = next
+    }
+    return prev
+}`,
+    },
+  },
+  '3': {
+    title: '3. 无重复字符的最长子串',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'STRING WRAITH',
+    description: `<h3>3. 无重复字符的最长子串 <span class="diff-badge medium">中等</span></h3>
+<p>给定一个字符串 <code>s</code>，请你找出其中不含有重复字符的<strong>最长子串</strong>的长度。</p>
+<h4>示例 1:</h4>
+<pre>输入: s = "abcabcbb"
+输出: 3
+解释: 因为无重复字符的最长子串是 "abc"，所以其长度为 3。</pre>
+<h4>示例 2:</h4>
+<pre>输入: s = "bbbbb"
+输出: 1</pre>
+<h4>示例 3:</h4>
+<pre>输入: s = "pwwkew"
+输出: 3</pre>`,
+    solutions: {
+      python: `class Solution:
+    def lengthOfLongestSubstring(self, s: str) -> int:
+        # 在此编写你的代码
+        pass`,
+      javascript: `var lengthOfLongestSubstring = function(s) {
+    // 在此编写你的代码
+    
+};`,
+    },
+    testCases: [
+      { input: 's = "abcabcbb"', expected: "3", explanation: '无重复字符的最长子串是 "abc"' },
+      { input: 's = "bbbbb"', expected: "1" },
+      { input: 's = "pwwkew"', expected: "3" },
+    ],
+    reference: {
+      python: `class Solution:
+    def lengthOfLongestSubstring(self, s: str) -> int:
+        seen = {}
+        left = 0
+        max_len = 0
+        for right, char in enumerate(s):
+            if char in seen and seen[char] >= left:
+                left = seen[char] + 1
+            seen[char] = right
+            max_len = max(max_len, right - left + 1)
+        return max_len`,
+      javascript: `var lengthOfLongestSubstring = function(s) {
+    const seen = new Map();
+    let left = 0;
+    let maxLen = 0;
+    for (let right = 0; right < s.length; right++) {
+        const char = s[right];
+        if (seen.has(char) && seen.get(char) >= left) {
+            left = seen.get(char) + 1;
+        }
+        seen.set(char, right);
+        maxLen = Math.max(maxLen, right - left + 1);
+    }
+    return maxLen;
+};`,
+      java: `class Solution {
+    public int lengthOfLongestSubstring(String s) {
+        Map<Character, Integer> seen = new HashMap<>();
+        int left = 0, maxLen = 0;
+        for (int right = 0; right < s.length(); right++) {
+            char c = s.charAt(right);
+            if (seen.containsKey(c) && seen.get(c) >= left) {
+                left = seen.get(c) + 1;
+            }
+            seen.put(c, right);
+            maxLen = Math.max(maxLen, right - left + 1);
+        }
+        return maxLen;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        unordered_map<char, int> seen;
+        int left = 0, maxLen = 0;
+        for (int right = 0; right < s.size(); right++) {
+            char c = s[right];
+            if (seen.count(c) && seen[c] >= left) {
+                left = seen[c] + 1;
+            }
+            seen[c] = right;
+            maxLen = max(maxLen, right - left + 1);
+        }
+        return maxLen;
+    }
+};`,
+      go: `func lengthOfLongestSubstring(s string) int {
+    seen := make(map[byte]int)
+    left, maxLen := 0, 0
+    for right := 0; right < len(s); right++ {
+        c := s[right]
+        if idx, ok := seen[c]; ok && idx >= left {
+            left = idx + 1
+        }
+        seen[c] = right
+        if right - left + 1 > maxLen {
+            maxLen = right - left + 1
+        }
+    }
+    return maxLen
+}`,
+    },
+  },
+  '70': {
+    title: '70. 爬楼梯',
+    difficulty: 'easy',
+    enemy: '👾',
+    enemyName: 'STEPLING',
+    description: `<h3>70. 爬楼梯 <span class="diff-badge easy">简单</span></h3>
+<p>假设你正在爬楼梯。需要 <code>n</code> 阶你才能到达楼顶。</p>
+<p>每次你可以爬 <code>1</code> 或 <code>2</code> 个台阶。你有多少种不同的方法可以爬到楼顶呢？</p>
+<h4>示例 1:</h4>
+<pre>输入: n = 2
+输出: 2
+解释: 有两种方法可以爬到楼顶。
+1. 1 阶 + 1 阶
+2. 2 阶</pre>
+<h4>示例 2:</h4>
+<pre>输入: n = 3
+输出: 3</pre>`,
+    solutions: {
+      python: `class Solution:
+    def climbStairs(self, n: int) -> int:
+        # 在此编写你的代码
+        pass`,
+      javascript: `var climbStairs = function(n) {
+    // 在此编写你的代码
+    
+};`,
+    },
+    testCases: [
+      { input: "n = 2", expected: "2" },
+      { input: "n = 3", expected: "3" },
+    ],
+    reference: {
+      python: `class Solution:
+    def climbStairs(self, n: int) -> int:
+        if n <= 2:
+            return n
+        a, b = 1, 2
+        for _ in range(3, n + 1):
+            a, b = b, a + b
+        return b`,
+      javascript: `var climbStairs = function(n) {
+    if (n <= 2) return n;
+    let a = 1, b = 2;
+    for (let i = 3; i <= n; i++) {
+        [a, b] = [b, a + b];
+    }
+    return b;
+};`,
+      java: `class Solution {
+    public int climbStairs(int n) {
+        if (n <= 2) return n;
+        int a = 1, b = 2;
+        for (int i = 3; i <= n; i++) {
+            int temp = b;
+            b = a + b;
+            a = temp;
+        }
+        return b;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int climbStairs(int n) {
+        if (n <= 2) return n;
+        int a = 1, b = 2;
+        for (int i = 3; i <= n; i++) {
+            int temp = b;
+            b = a + b;
+            a = temp;
+        }
+        return b;
+    }
+};`,
+      go: `func climbStairs(n int) int {
+    if n <= 2 { return n }
+    a, b := 1, 2
+    for i := 3; i <= n; i++ {
+        a, b = b, a + b
+    }
+    return b
+}`,
+    },
+  },
+  '121': {
+    title: '121. 买卖股票的最佳时机',
+    difficulty: 'easy',
+    enemy: '👾',
+    enemyName: 'GOBLIN TRADER',
+    description: `<h3>121. 买卖股票的最佳时机 <span class="diff-badge easy">简单</span></h3>
+<p>给定一个数组 <code>prices</code>，它的第 <code>i</code> 个元素 <code>prices[i]</code> 表示一支给定股票第 <code>i</code> 天的价格。</p>
+<p>你只能选择<strong>某一天</strong>买入这只股票，并选择在<strong>未来的某一个不同的日子</strong>卖出该股票。设计一个算法来计算你所能获取的最大利润。</p>
+<p>返回你可以从这笔交易中获取的最大利润。如果你不能获取任何利润，返回 <code>0</code>。</p>
+<h4>示例 1:</h4>
+<pre>输入: [7,1,5,3,6,4]
+输出: 5</pre>
+<h4>示例 2:</h4>
+<pre>输入: [7,6,4,3,1]
+输出: 0</pre>`,
+    solutions: {
+      python: `class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        # 在此编写你的代码
+        pass`,
+    },
+    testCases: [
+      { input: "prices = [7,1,5,3,6,4]", expected: "5" },
+      { input: "prices = [7,6,4,3,1]", expected: "0" },
+    ],
+    reference: {
+      python: `class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        min_price = float('inf')
+        max_profit = 0
+        for price in prices:
+            min_price = min(min_price, price)
+            max_profit = max(max_profit, price - min_price)
+        return max_profit`,
+      javascript: `var maxProfit = function(prices) {
+    let minPrice = Infinity;
+    let maxProfit = 0;
+    for (const price of prices) {
+        minPrice = Math.min(minPrice, price);
+        maxProfit = Math.max(maxProfit, price - minPrice);
+    }
+    return maxProfit;
+};`,
+      java: `class Solution {
+    public int maxProfit(int[] prices) {
+        int minPrice = Integer.MAX_VALUE;
+        int maxProfit = 0;
+        for (int price : prices) {
+            minPrice = Math.min(minPrice, price);
+            maxProfit = Math.max(maxProfit, price - minPrice);
+        }
+        return maxProfit;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int minPrice = INT_MAX;
+        int maxProfit = 0;
+        for (int price : prices) {
+            minPrice = min(minPrice, price);
+            maxProfit = max(maxProfit, price - minPrice);
+        }
+        return maxProfit;
+    }
+};`,
+      go: `func maxProfit(prices []int) int {
+    minPrice := int(^uint(0) >> 1) // max int
+    maxProfit := 0
+    for _, price := range prices {
+        if price < minPrice {
+            minPrice = price
+        }
+        profit := price - minPrice
+        if profit > maxProfit {
+            maxProfit = profit
+        }
+    }
+    return maxProfit
+}`,
+    },
+  },
+
+  '455': {
+    title: '455. 分发饼干',
+    difficulty: 'easy',
+    enemy: '👾',
+    enemyName: 'HUNGRY GOBLIN',
+    description: `<h3>455. 分发饼干 <span class="diff-badge easy">简单</span></h3>
+<p>假设你是一位很棒的家长，想要给你的孩子们一些小饼干。但是每个孩子最多只能给一块饼干。</p>
+<p>对每个孩子 <code>i</code>，都有一个胃口值 <code>g[i]</code>，这是能让孩子满足的最小饼干尺寸；每块饼干 <code>j</code>，都有一个尺寸 <code>s[j]</code>。如果 <code>s[j] >= g[i]</code>，我们可以将这个饼干分配给孩子 <code>i</code>，这个孩子会得到满足。</p>
+<p>你的目标是尽可能满足越多的孩子，并输出这个最大数值。</p>
+<h4>示例 1:</h4>
+<pre>输入: g = [1,2,3], s = [1,1]
+输出: 1</pre>
+<h4>示例 2:</h4>
+<pre>输入: g = [1,2], s = [1,2,3]
+输出: 2</pre>`,
+    solutions: {
+      python: `class Solution:
+    def findContentChildren(self, g: List[int], s: List[int]) -> int:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public int findContentChildren(int[] g, int[] s) {
+        // 在此编写你的代码
+        return 0;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int findContentChildren(vector<int>& g, vector<int>& s) {
+        // 在此编写你的代码
+        return 0;
+    }
+};`,
+      javascript: `var findContentChildren = function(g, s) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func findContentChildren(g []int, s []int) int {
+    // 在此编写你的代码
+    return 0
+}`,
+    },
+    testCases: [
+      { input: "g = [1,2,3], s = [1,1]", expected: "1" },
+      { input: "g = [1,2], s = [1,2,3]", expected: "2" },
+    ],
+    reference: {
+      python: `class Solution:
+    def findContentChildren(self, g: List[int], s: List[int]) -> int:
+        g.sort()
+        s.sort()
+        i = j = 0
+        while i < len(g) and j < len(s):
+            if s[j] >= g[i]:
+                i += 1
+            j += 1
+        return i`,
+      javascript: `var findContentChildren = function(g, s) {
+    g.sort((a, b) => a - b);
+    s.sort((a, b) => a - b);
+    let i = 0, j = 0;
+    while (i < g.length && j < s.length) {
+        if (s[j] >= g[i]) i++;
+        j++;
+    }
+    return i;
+};`,
+      java: `class Solution {
+    public int findContentChildren(int[] g, int[] s) {
+        Arrays.sort(g);
+        Arrays.sort(s);
+        int i = 0, j = 0;
+        while (i < g.length && j < s.length) {
+            if (s[j] >= g[i]) i++;
+            j++;
+        }
+        return i;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int findContentChildren(vector<int>& g, vector<int>& s) {
+        sort(g.begin(), g.end());
+        sort(s.begin(), s.end());
+        int i = 0, j = 0;
+        while (i < g.size() && j < s.size()) {
+            if (s[j] >= g[i]) i++;
+            j++;
+        }
+        return i;
+    }
+};`,
+      go: `func findContentChildren(g []int, s []int) int {
+    sort.Ints(g)
+    sort.Ints(s)
+    i, j := 0, 0
+    for i < len(g) && j < len(s) {
+        if s[j] >= g[i] {
+            i++
+        }
+        j++
+    }
+    return i
+}`,
+    },
+  },
+
+  '33': {
+    title: '33. 搜索旋转排序数组',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'TWISTED SENTINEL',
+    description: `<h3>33. 搜索旋转排序数组 <span class="diff-badge medium">中等</span></h3>
+<p>整数数组 <code>nums</code> 按升序排列，数组中的值<strong>互不相同</strong>。在传递给函数之前，<code>nums</code> 在预先未知的某个下标 <code>k</code> 上进行了<strong>旋转</strong>，使数组变为 <code>[nums[k], nums[k+1], ..., nums[n-1], nums[0], ..., nums[k-1]]</code>。</p>
+<p>例如 <code>[0,1,2,4,5,6,7]</code> 在下标 3 处旋转后变为 <code>[4,5,6,7,0,1,2]</code>。</p>
+<p>给你旋转后的数组 <code>nums</code> 和一个整数 <code>target</code>，如果 nums 中存在 target 则返回下标，否则返回 <code>-1</code>。必须设计 O(log n) 的算法。</p>
+<h4>示例 1:</h4>
+<pre>输入: nums = [4,5,6,7,0,1,2], target = 0
+输出: 4</pre>
+<h4>示例 2:</h4>
+<pre>输入: nums = [4,5,6,7,0,1,2], target = 3
+输出: -1</pre>`,
+    solutions: {
+      python: `class Solution:
+    def search(self, nums: List[int], target: int) -> int:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public int search(int[] nums, int target) {
+        // 在此编写你的代码
+        return -1;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        // 在此编写你的代码
+        return -1;
+    }
+};`,
+      javascript: `var search = function(nums, target) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func search(nums []int, target int) int {
+    // 在此编写你的代码
+    return -1
+}`,
+    },
+    testCases: [
+      { input: "nums = [4,5,6,7,0,1,2], target = 0", expected: "4" },
+      { input: "nums = [4,5,6,7,0,1,2], target = 3", expected: "-1" },
+      { input: "nums = [1], target = 0", expected: "-1" },
+    ],
+    reference: {
+      python: `class Solution:
+    def search(self, nums: List[int], target: int) -> int:
+        l, r = 0, len(nums) - 1
+        while l <= r:
+            mid = (l + r) // 2
+            if nums[mid] == target:
+                return mid
+            if nums[l] <= nums[mid]:
+                if nums[l] <= target < nums[mid]:
+                    r = mid - 1
+                else:
+                    l = mid + 1
+            else:
+                if nums[mid] < target <= nums[r]:
+                    l = mid + 1
+                else:
+                    r = mid - 1
+        return -1`,
+      javascript: `var search = function(nums, target) {
+    let l = 0, r = nums.length - 1;
+    while (l <= r) {
+        const mid = Math.floor((l + r) / 2);
+        if (nums[mid] === target) return mid;
+        if (nums[l] <= nums[mid]) {
+            if (nums[l] <= target && target < nums[mid]) r = mid - 1;
+            else l = mid + 1;
+        } else {
+            if (nums[mid] < target && target <= nums[r]) l = mid + 1;
+            else r = mid - 1;
+        }
+    }
+    return -1;
+};`,
+      java: `class Solution {
+    public int search(int[] nums, int target) {
+        int l = 0, r = nums.length - 1;
+        while (l <= r) {
+            int mid = l + (r - l) / 2;
+            if (nums[mid] == target) return mid;
+            if (nums[l] <= nums[mid]) {
+                if (nums[l] <= target && target < nums[mid]) r = mid - 1;
+                else l = mid + 1;
+            } else {
+                if (nums[mid] < target && target <= nums[r]) l = mid + 1;
+                else r = mid - 1;
+            }
+        }
+        return -1;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int l = 0, r = nums.size() - 1;
+        while (l <= r) {
+            int mid = l + (r - l) / 2;
+            if (nums[mid] == target) return mid;
+            if (nums[l] <= nums[mid]) {
+                if (nums[l] <= target && target < nums[mid]) r = mid - 1;
+                else l = mid + 1;
+            } else {
+                if (nums[mid] < target && target <= nums[r]) l = mid + 1;
+                else r = mid - 1;
+            }
+        }
+        return -1;
+    }
+};`,
+      go: `func search(nums []int, target int) int {
+    l, r := 0, len(nums)-1
+    for l <= r {
+        mid := l + (r-l)/2
+        if nums[mid] == target {
+            return mid
+        }
+        if nums[l] <= nums[mid] {
+            if nums[l] <= target && target < nums[mid] {
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        } else {
+            if nums[mid] < target && target <= nums[r] {
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+    }
+    return -1
+}`,
+    },
+  },
+
+  '56': {
+    title: '56. 合并区间',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'OVERLAPPING WRAITH',
+    description: `<h3>56. 合并区间 <span class="diff-badge medium">中等</span></h3>
+<p>以数组 <code>intervals</code> 表示若干个区间的集合，其中单个区间为 <code>intervals[i] = [start<sub>i</sub>, end<sub>i</sub>]</code>。请你合并所有重叠的区间，并返回一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间。</p>
+<h4>示例 1:</h4>
+<pre>输入: intervals = [[1,3],[2,6],[8,10],[15,18]]
+输出: [[1,6],[8,10],[15,18]]
+解释: 区间 [1,3] 和 [2,6] 重叠, 将它们合并为 [1,6]。</pre>
+<h4>示例 2:</h4>
+<pre>输入: intervals = [[1,4],[4,5]]
+输出: [[1,5]]
+解释: 区间 [1,4] 和 [4,5] 可被视为重叠区间。</pre>`,
+    solutions: {
+      python: `class Solution:
+    def merge(self, intervals: List[List[int]]) -> List[List[int]]:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public int[][] merge(int[][] intervals) {
+        // 在此编写你的代码
+        return null;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        // 在此编写你的代码
+        return {};
+    }
+};`,
+      javascript: `var merge = function(intervals) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func merge(intervals [][]int) [][]int {
+    // 在此编写你的代码
+    return nil
+}`,
+    },
+    testCases: [
+      { input: "intervals = [[1,3],[2,6],[8,10],[15,18]]", expected: "[[1,6],[8,10],[15,18]]" },
+      { input: "intervals = [[1,4],[4,5]]", expected: "[[1,5]]" },
+    ],
+    reference: {
+      python: `class Solution:
+    def merge(self, intervals: List[List[int]]) -> List[List[int]]:
+        intervals.sort(key=lambda x: x[0])
+        merged = []
+        for interval in intervals:
+            if not merged or merged[-1][1] < interval[0]:
+                merged.append(interval)
+            else:
+                merged[-1][1] = max(merged[-1][1], interval[1])
+        return merged`,
+      javascript: `var merge = function(intervals) {
+    intervals.sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    for (const interval of intervals) {
+        if (merged.length === 0 || merged[merged.length - 1][1] < interval[0]) {
+            merged.push(interval);
+        } else {
+            merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], interval[1]);
+        }
+    }
+    return merged;
+};`,
+      java: `class Solution {
+    public int[][] merge(int[][] intervals) {
+        Arrays.sort(intervals, (a, b) -> a[0] - b[0]);
+        List<int[]> merged = new ArrayList<>();
+        for (int[] interval : intervals) {
+            if (merged.isEmpty() || merged.get(merged.size() - 1)[1] < interval[0]) {
+                merged.add(interval);
+            } else {
+                merged.get(merged.size() - 1)[1] = Math.max(merged.get(merged.size() - 1)[1], interval[1]);
+            }
+        }
+        return merged.toArray(new int[merged.size()][]);
+    }
+}`,
+      cpp: `class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end());
+        vector<vector<int>> merged;
+        for (auto& interval : intervals) {
+            if (merged.empty() || merged.back()[1] < interval[0]) {
+                merged.push_back(interval);
+            } else {
+                merged.back()[1] = max(merged.back()[1], interval[1]);
+            }
+        }
+        return merged;
+    }
+};`,
+      go: `func merge(intervals [][]int) [][]int {
+    sort.Slice(intervals, func(i, j int) bool {
+        return intervals[i][0] < intervals[j][0]
+    })
+    merged := [][]int{}
+    for _, interval := range intervals {
+        if len(merged) == 0 || merged[len(merged)-1][1] < interval[0] {
+            merged = append(merged, interval)
+        } else {
+            if interval[1] > merged[len(merged)-1][1] {
+                merged[len(merged)-1][1] = interval[1]
+            }
+        }
+    }
+    return merged
+}`,
+    },
+  },
+
+  '11': {
+    title: '11. 盛最多水的容器',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'AQUA GUARDIAN',
+    description: `<h3>11. 盛最多水的容器 <span class="diff-badge medium">中等</span></h3>
+<p>给定一个长度为 <code>n</code> 的整数数组 <code>height</code>。有 <code>n</code> 条垂线，第 <code>i</code> 条线的两个端点是 <code>(i, 0)</code> 和 <code>(i, height[i])</code>。</p>
+<p>找出其中的两条线，使得它们与 x 轴共同构成的容器可以容纳最多的水。返回容器可以储存的最大水量。</p>
+<p><strong>说明：</strong>你不能倾斜容器。</p>
+<h4>示例 1:</h4>
+<pre>输入: [1,8,6,2,5,4,8,3,7]
+输出: 49
+解释: 图中垂直线代表输入数组 [1,8,6,2,5,4,8,3,7]。
+最大容器由高度 8 和 7 的两条线构成，宽度为 7，容量为 min(8,7) * 7 = 49。</pre>
+<h4>示例 2:</h4>
+<pre>输入: height = [1,1]
+输出: 1</pre>`,
+    solutions: {
+      python: `class Solution:
+    def maxArea(self, height: List[int]) -> int:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public int maxArea(int[] height) {
+        // 在此编写你的代码
+        return 0;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        // 在此编写你的代码
+        return 0;
+    }
+};`,
+      javascript: `var maxArea = function(height) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func maxArea(height []int) int {
+    // 在此编写你的代码
+    return 0
+}`,
+    },
+    testCases: [
+      { input: "height = [1,8,6,2,5,4,8,3,7]", expected: "49" },
+      { input: "height = [1,1]", expected: "1" },
+    ],
+    reference: {
+      python: `class Solution:
+    def maxArea(self, height: List[int]) -> int:
+        l, r = 0, len(height) - 1
+        max_area = 0
+        while l < r:
+            h = min(height[l], height[r])
+            max_area = max(max_area, h * (r - l))
+            if height[l] < height[r]:
+                l += 1
+            else:
+                r -= 1
+        return max_area`,
+      javascript: `var maxArea = function(height) {
+    let l = 0, r = height.length - 1;
+    let maxArea = 0;
+    while (l < r) {
+        const h = Math.min(height[l], height[r]);
+        maxArea = Math.max(maxArea, h * (r - l));
+        if (height[l] < height[r]) l++;
+        else r--;
+    }
+    return maxArea;
+};`,
+      java: `class Solution {
+    public int maxArea(int[] height) {
+        int l = 0, r = height.length - 1;
+        int maxArea = 0;
+        while (l < r) {
+            int h = Math.min(height[l], height[r]);
+            maxArea = Math.max(maxArea, h * (r - l));
+            if (height[l] < height[r]) l++;
+            else r--;
+        }
+        return maxArea;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int l = 0, r = height.size() - 1;
+        int maxArea = 0;
+        while (l < r) {
+            int h = min(height[l], height[r]);
+            maxArea = max(maxArea, h * (r - l));
+            if (height[l] < height[r]) l++;
+            else r--;
+        }
+        return maxArea;
+    }
+};`,
+      go: `func maxArea(height []int) int {
+    l, r := 0, len(height)-1
+    maxA := 0
+    for l < r {
+        h := height[l]
+        if height[r] < h {
+            h = height[r]
+        }
+        area := h * (r - l)
+        if area > maxA {
+            maxA = area
+        }
+        if height[l] < height[r] {
+            l++
+        } else {
+            r--
+        }
+    }
+    return maxA
+}`,
+    },
+  },
+
+  '4': {
+    title: '4. 寻找两个正序数组的中位数',
+    difficulty: 'hard',
+    enemy: '🐉',
+    enemyName: 'MEDIAN DRAGON',
+    description: `<h3>4. 寻找两个正序数组的中位数 <span class="diff-badge hard">困难</span></h3>
+<p>给定两个大小分别为 <code>m</code> 和 <code>n</code> 的正序（从小到大）数组 <code>nums1</code> 和 <code>nums2</code>。请你找出并返回这两个正序数组的<strong>中位数</strong>。</p>
+<p>算法的时间复杂度必须为 <code>O(log (m+n))</code>。</p>
+<h4>示例 1:</h4>
+<pre>输入: nums1 = [1,3], nums2 = [2]
+输出: 2.00000
+解释: 合并数组 = [1,2,3]，中位数 2</pre>
+<h4>示例 2:</h4>
+<pre>输入: nums1 = [1,2], nums2 = [3,4]
+输出: 2.50000
+解释: 合并数组 = [1,2,3,4]，中位数 (2 + 3) / 2 = 2.5</pre>`,
+    solutions: {
+      python: `class Solution:
+    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        // 在此编写你的代码
+        return 0.0;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        // 在此编写你的代码
+        return 0.0;
+    }
+};`,
+      javascript: `var findMedianSortedArrays = function(nums1, nums2) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+    // 在此编写你的代码
+    return 0.0
+}`,
+    },
+    testCases: [
+      { input: "nums1 = [1,3], nums2 = [2]", expected: "2.0" },
+      { input: "nums1 = [1,2], nums2 = [3,4]", expected: "2.5" },
+    ],
+    reference: {
+      python: `class Solution:
+    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:
+        if len(nums1) > len(nums2):
+            nums1, nums2 = nums2, nums1
+        m, n = len(nums1), len(nums2)
+        l, r = 0, m
+        half = (m + n + 1) // 2
+        while l <= r:
+            i = (l + r) // 2
+            j = half - i
+            if i < m and nums2[j-1] > nums1[i]:
+                l = i + 1
+            elif i > 0 and nums1[i-1] > nums2[j]:
+                r = i - 1
+            else:
+                max_left = 0
+                if i == 0:
+                    max_left = nums2[j-1]
+                elif j == 0:
+                    max_left = nums1[i-1]
+                else:
+                    max_left = max(nums1[i-1], nums2[j-1])
+                if (m + n) % 2 == 1:
+                    return max_left
+                min_right = 0
+                if i == m:
+                    min_right = nums2[j]
+                elif j == n:
+                    min_right = nums1[i]
+                else:
+                    min_right = min(nums1[i], nums2[j])
+                return (max_left + min_right) / 2.0`,
+      javascript: `var findMedianSortedArrays = function(nums1, nums2) {
+    if (nums1.length > nums2.length) [nums1, nums2] = [nums2, nums1];
+    const m = nums1.length, n = nums2.length;
+    let l = 0, r = m;
+    const half = Math.floor((m + n + 1) / 2);
+    while (l <= r) {
+        const i = Math.floor((l + r) / 2);
+        const j = half - i;
+        if (i < m && nums2[j - 1] > nums1[i]) {
+            l = i + 1;
+        } else if (i > 0 && nums1[i - 1] > nums2[j]) {
+            r = i - 1;
+        } else {
+            let maxLeft = 0;
+            if (i === 0) maxLeft = nums2[j - 1];
+            else if (j === 0) maxLeft = nums1[i - 1];
+            else maxLeft = Math.max(nums1[i - 1], nums2[j - 1]);
+            if ((m + n) % 2 === 1) return maxLeft;
+            let minRight = 0;
+            if (i === m) minRight = nums2[j];
+            else if (j === n) minRight = nums1[i];
+            else minRight = Math.min(nums1[i], nums2[j]);
+            return (maxLeft + minRight) / 2;
+        }
+    }
+    return 0;
+};`,
+      java: `class Solution {
+    public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        if (nums1.length > nums2.length) {
+            int[] temp = nums1; nums1 = nums2; nums2 = temp;
+        }
+        int m = nums1.length, n = nums2.length;
+        int l = 0, r = m;
+        int half = (m + n + 1) / 2;
+        while (l <= r) {
+            int i = (l + r) / 2;
+            int j = half - i;
+            if (i < m && nums2[j - 1] > nums1[i]) {
+                l = i + 1;
+            } else if (i > 0 && nums1[i - 1] > nums2[j]) {
+                r = i - 1;
+            } else {
+                int maxLeft;
+                if (i == 0) maxLeft = nums2[j - 1];
+                else if (j == 0) maxLeft = nums1[i - 1];
+                else maxLeft = Math.max(nums1[i - 1], nums2[j - 1]);
+                if ((m + n) % 2 == 1) return maxLeft;
+                int minRight;
+                if (i == m) minRight = nums2[j];
+                else if (j == n) minRight = nums1[i];
+                else minRight = Math.min(nums1[i], nums2[j]);
+                return (maxLeft + minRight) / 2.0;
+            }
+        }
+        return 0.0;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        if (nums1.size() > nums2.size())
+            swap(nums1, nums2);
+        int m = nums1.size(), n = nums2.size();
+        int l = 0, r = m;
+        int half = (m + n + 1) / 2;
+        while (l <= r) {
+            int i = (l + r) / 2;
+            int j = half - i;
+            if (i < m && nums2[j - 1] > nums1[i]) {
+                l = i + 1;
+            } else if (i > 0 && nums1[i - 1] > nums2[j]) {
+                r = i - 1;
+            } else {
+                int maxLeft;
+                if (i == 0) maxLeft = nums2[j - 1];
+                else if (j == 0) maxLeft = nums1[i - 1];
+                else maxLeft = max(nums1[i - 1], nums2[j - 1]);
+                if ((m + n) % 2 == 1) return maxLeft;
+                int minRight;
+                if (i == m) minRight = nums2[j];
+                else if (j == n) minRight = nums1[i];
+                else minRight = min(nums1[i], nums2[j]);
+                return (maxLeft + minRight) / 2.0;
+            }
+        }
+        return 0.0;
+    }
+};`,
+      go: `func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+    if len(nums1) > len(nums2) {
+        nums1, nums2 = nums2, nums1
+    }
+    m, n := len(nums1), len(nums2)
+    l, r := 0, m
+    half := (m + n + 1) / 2
+    for l <= r {
+        i := (l + r) / 2
+        j := half - i
+        if i < m && nums2[j-1] > nums1[i] {
+            l = i + 1
+        } else if i > 0 && nums1[i-1] > nums2[j] {
+            r = i - 1
+        } else {
+            var maxLeft float64
+            if i == 0 {
+                maxLeft = float64(nums2[j-1])
+            } else if j == 0 {
+                maxLeft = float64(nums1[i-1])
+            } else {
+                maxLeft = float64(max(nums1[i-1], nums2[j-1]))
+            }
+            if (m+n)%2 == 1 {
+                return maxLeft
+            }
+            var minRight float64
+            if i == m {
+                minRight = float64(nums2[j])
+            } else if j == n {
+                minRight = float64(nums1[i])
+            } else {
+                minRight = float64(min(nums1[i], nums2[j]))
+            }
+            return (maxLeft + minRight) / 2.0
+        }
+    }
+    return 0.0
+}`,
+    },
+  },
+
+  '5': {
+    title: '5. 最长回文子串',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'PALINDROME WRAITH',
+    description: `<h3>5. 最长回文子串 <span class="diff-badge medium">中等</span></h3>
+<p>给你一个字符串 <code>s</code>，找到 <code>s</code> 中最长的<strong>回文子串</strong>。如果存在多个答案，返回其中任意一个。</p>
+<p>回文串：正着读和反着读都一样的字符串。</p>
+<h4>示例 1:</h4>
+<pre>输入: s = "babad"
+输出: "bab"
+解释: "aba" 同样是符合题意的答案。</pre>
+<h4>示例 2:</h4>
+<pre>输入: s = "cbbd"
+输出: "bb"</pre>`,
+    solutions: {
+      python: `class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public String longestPalindrome(String s) {
+        // 在此编写你的代码
+        return "";
+    }
+}`,
+      cpp: `class Solution {
+public:
+    string longestPalindrome(string s) {
+        // 在此编写你的代码
+        return "";
+    }
+};`,
+      javascript: `var longestPalindrome = function(s) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func longestPalindrome(s string) string {
+    // 在此编写你的代码
+    return ""
+}`,
+    },
+    testCases: [
+      { input: 's = "babad"', expected: '"bab" (或 "aba")' },
+      { input: 's = "cbbd"', expected: '"bb"' },
+    ],
+    reference: {
+      python: `class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        if not s:
+            return ""
+        start, max_len = 0, 0
+        for i in range(len(s)):
+            len1 = self.expand(s, i, i)
+            len2 = self.expand(s, i, i + 1)
+            cur_len = max(len1, len2)
+            if cur_len > max_len:
+                max_len = cur_len
+                start = i - (cur_len - 1) // 2
+        return s[start:start + max_len]
+    
+    def expand(self, s, l, r):
+        while l >= 0 and r < len(s) and s[l] == s[r]:
+            l -= 1
+            r += 1
+        return r - l - 1`,
+      javascript: `var longestPalindrome = function(s) {
+    if (!s) return "";
+    let start = 0, maxLen = 0;
+    const expand = (l, r) => {
+        while (l >= 0 && r < s.length && s[l] === s[r]) {
+            l--;
+            r++;
+        }
+        return r - l - 1;
+    };
+    for (let i = 0; i < s.length; i++) {
+        const len1 = expand(i, i);
+        const len2 = expand(i, i + 1);
+        const curLen = Math.max(len1, len2);
+        if (curLen > maxLen) {
+            maxLen = curLen;
+            start = i - Math.floor((curLen - 1) / 2);
+        }
+    }
+    return s.substring(start, start + maxLen);
+};`,
+      java: `class Solution {
+    public String longestPalindrome(String s) {
+        if (s == null || s.length() == 0) return "";
+        int start = 0, maxLen = 0;
+        for (int i = 0; i < s.length(); i++) {
+            int len1 = expand(s, i, i);
+            int len2 = expand(s, i, i + 1);
+            int curLen = Math.max(len1, len2);
+            if (curLen > maxLen) {
+                maxLen = curLen;
+                start = i - (curLen - 1) / 2;
+            }
+        }
+        return s.substring(start, start + maxLen);
+    }
+    
+    private int expand(String s, int l, int r) {
+        while (l >= 0 && r < s.length() && s.charAt(l) == s.charAt(r)) {
+            l--;
+            r++;
+        }
+        return r - l - 1;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    string longestPalindrome(string s) {
+        if (s.empty()) return "";
+        int start = 0, maxLen = 0;
+        for (int i = 0; i < s.size(); i++) {
+            int len1 = expand(s, i, i);
+            int len2 = expand(s, i, i + 1);
+            int curLen = max(len1, len2);
+            if (curLen > maxLen) {
+                maxLen = curLen;
+                start = i - (curLen - 1) / 2;
+            }
+        }
+        return s.substr(start, maxLen);
+    }
+    
+    int expand(const string& s, int l, int r) {
+        while (l >= 0 && r < s.size() && s[l] == s[r]) {
+            l--;
+            r++;
+        }
+        return r - l - 1;
+    }
+};`,
+      go: `func longestPalindrome(s string) string {
+    if len(s) == 0 { return "" }
+    start, maxLen := 0, 0
+    for i := 0; i < len(s); i++ {
+        len1 := expand(s, i, i)
+        len2 := expand(s, i, i+1)
+        curLen := len1
+        if len2 > curLen { curLen = len2 }
+        if curLen > maxLen {
+            maxLen = curLen
+            start = i - (curLen-1)/2
+        }
+    }
+    return s[start : start+maxLen]
+}
+
+func expand(s string, l, r int) int {
+    for l >= 0 && r < len(s) && s[l] == s[r] {
+        l--
+        r++
+    }
+    return r - l - 1
+}`,
+    },
+  },
+
+  '22': {
+    title: '22. 括号生成',
+    difficulty: 'medium',
+    enemy: '🐺',
+    enemyName: 'BRACKET SHADE',
+    description: `<h3>22. 括号生成 <span class="diff-badge medium">中等</span></h3>
+<p>数字 <code>n</code> 代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且<strong>有效的</strong>括号组合。</p>
+<p>有效括号组合：需满足左括号必须以正确顺序闭合。</p>
+<h4>示例 1:</h4>
+<pre>输入: n = 3
+输出: ["((()))","(()())","(())()","()(())","()()()"]</pre>
+<h4>示例 2:</h4>
+<pre>输入: n = 1
+输出: ["()"]</pre>`,
+    solutions: {
+      python: `class Solution:
+    def generateParenthesis(self, n: int) -> List[str]:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public List<String> generateParenthesis(int n) {
+        // 在此编写你的代码
+        return null;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    vector<string> generateParenthesis(int n) {
+        // 在此编写你的代码
+        return {};
+    }
+};`,
+      javascript: `var generateParenthesis = function(n) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func generateParenthesis(n int) []string {
+    // 在此编写你的代码
+    return nil
+}`,
+    },
+    testCases: [
+      { input: "n = 3", expected: '["((()))","(()())","(())()","()(())","()()()"]' },
+      { input: "n = 1", expected: '["()"]' },
+    ],
+    reference: {
+      python: `class Solution:
+    def generateParenthesis(self, n: int) -> List[str]:
+        result = []
+        def backtrack(s, open_count, close_count):
+            if len(s) == 2 * n:
+                result.append(s)
+                return
+            if open_count < n:
+                backtrack(s + '(', open_count + 1, close_count)
+            if close_count < open_count:
+                backtrack(s + ')', open_count, close_count + 1)
+        backtrack('', 0, 0)
+        return result`,
+      javascript: `var generateParenthesis = function(n) {
+    const result = [];
+    const backtrack = (s, open, close) => {
+        if (s.length === 2 * n) {
+            result.push(s);
+            return;
+        }
+        if (open < n) backtrack(s + '(', open + 1, close);
+        if (close < open) backtrack(s + ')', open, close + 1);
+    };
+    backtrack('', 0, 0);
+    return result;
+};`,
+      java: `class Solution {
+    public List<String> generateParenthesis(int n) {
+        List<String> result = new ArrayList<>();
+        backtrack(result, "", 0, 0, n);
+        return result;
+    }
+    
+    private void backtrack(List<String> result, String s, int open, int close, int n) {
+        if (s.length() == 2 * n) {
+            result.add(s);
+            return;
+        }
+        if (open < n) backtrack(result, s + "(", open + 1, close, n);
+        if (close < open) backtrack(result, s + ")", open, close + 1, n);
+    }
+}`,
+      cpp: `class Solution {
+public:
+    vector<string> generateParenthesis(int n) {
+        vector<string> result;
+        backtrack(result, "", 0, 0, n);
+        return result;
+    }
+    
+    void backtrack(vector<string>& result, string s, int open, int close, int n) {
+        if (s.size() == 2 * n) {
+            result.push_back(s);
+            return;
+        }
+        if (open < n) backtrack(result, s + "(", open + 1, close, n);
+        if (close < open) backtrack(result, s + ")", open, close + 1, n);
+    }
+};`,
+      go: `func generateParenthesis(n int) []string {
+    result := []string{}
+    var backtrack func(string, int, int)
+    backtrack = func(s string, open, close int) {
+        if len(s) == 2*n {
+            result = append(result, s)
+            return
+        }
+        if open < n {
+            backtrack(s + "(", open+1, close)
+        }
+        if close < open {
+            backtrack(s + ")", open, close+1)
+        }
+    }
+    backtrack("", 0, 0)
+    return result
+}`,
+    },
+  },
+
+  '23': {
+    title: '23. 合并K个升序链表',
+    difficulty: 'hard',
+    enemy: '🐉',
+    enemyName: 'HYDRA OVERLORD',
+    description: `<h3>23. 合并K个升序链表 <span class="diff-badge hard">困难</span></h3>
+<p>给你一个链表数组 <code>lists</code>，每个链表都已经按<strong>升序</strong>排列。请你将所有链表合并到一个升序链表中，返回合并后的链表。</p>
+<h4>示例 1:</h4>
+<pre>输入: lists = [[1,4,5],[1,3,4],[2,6]]
+输出: [1,1,2,3,4,4,5,6]
+解释: 将三个链表合并为一个升序链表。</pre>
+<h4>示例 2:</h4>
+<pre>输入: lists = []
+输出: []</pre>
+<h4>示例 3:</h4>
+<pre>输入: lists = [[]]
+输出: []</pre>`,
+    solutions: {
+      python: `class Solution:
+    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+        # 在此编写你的代码
+        pass`,
+      java: `class Solution {
+    public ListNode mergeKLists(ListNode[] lists) {
+        // 在此编写你的代码
+        return null;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        // 在此编写你的代码
+        return nullptr;
+    }
+};`,
+      javascript: `var mergeKLists = function(lists) {
+    // 在此编写你的代码
+    
+};`,
+      go: `func mergeKLists(lists []*ListNode) *ListNode {
+    // 在此编写你的代码
+    return nil
+}`,
+    },
+    testCases: [
+      { input: "lists = [[1,4,5],[1,3,4],[2,6]]", expected: "[1,1,2,3,4,4,5,6]" },
+      { input: "lists = []", expected: "[]" },
+      { input: "lists = [[]]", expected: "[]" },
+    ],
+    reference: {
+      python: `import heapq
+
+class Solution:
+    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+        heap = []
+        for i, node in enumerate(lists):
+            if node:
+                heapq.heappush(heap, (node.val, i, node))
+        dummy = ListNode(0)
+        curr = dummy
+        while heap:
+            val, i, node = heapq.heappop(heap)
+            curr.next = node
+            curr = curr.next
+            if node.next:
+                heapq.heappush(heap, (node.next.val, i, node.next))
+        return dummy.next`,
+      javascript: `var mergeKLists = function(lists) {
+    const mergeTwo = (a, b) => {
+        const dummy = new ListNode(0);
+        let curr = dummy;
+        while (a && b) {
+            if (a.val < b.val) { curr.next = a; a = a.next; }
+            else { curr.next = b; b = b.next; }
+            curr = curr.next;
+        }
+        curr.next = a || b;
+        return dummy.next;
+    };
+    
+    if (lists.length === 0) return null;
+    while (lists.length > 1) {
+        const merged = [];
+        for (let i = 0; i < lists.length; i += 2) {
+            merged.push(mergeTwo(lists[i], lists[i + 1] || null));
+        }
+        lists = merged;
+    }
+    return lists[0];
+};`,
+      java: `class Solution {
+    public ListNode mergeKLists(ListNode[] lists) {
+        if (lists.length == 0) return null;
+        PriorityQueue<ListNode> pq = new PriorityQueue<>((a, b) -> a.val - b.val);
+        for (ListNode node : lists) {
+            if (node != null) pq.offer(node);
+        }
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        while (!pq.isEmpty()) {
+            ListNode node = pq.poll();
+            curr.next = node;
+            curr = curr.next;
+            if (node.next != null) pq.offer(node.next);
+        }
+        return dummy.next;
+    }
+}`,
+      cpp: `class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        auto cmp = [](ListNode* a, ListNode* b) { return a->val > b->val; };
+        priority_queue<ListNode*, vector<ListNode*>, decltype(cmp)> pq(cmp);
+        for (auto node : lists) {
+            if (node) pq.push(node);
+        }
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+        while (!pq.empty()) {
+            ListNode* node = pq.top(); pq.pop();
+            curr->next = node;
+            curr = curr->next;
+            if (node->next) pq.push(node->next);
+        }
+        return dummy.next;
+    }
+};`,
+      go: `func mergeKLists(lists []*ListNode) *ListNode {
+    if len(lists) == 0 { return nil }
+    n := len(lists)
+    if n == 1 { return lists[0] }
+    mid := n / 2
+    left := mergeKLists(lists[:mid])
+    right := mergeKLists(lists[mid:])
+    return mergeTwo(left, right)
+}
+
+func mergeTwo(l1, l2 *ListNode) *ListNode {
+    dummy := &ListNode{}
+    curr := dummy
+    for l1 != nil && l2 != nil {
+        if l1.Val < l2.Val {
+            curr.Next = l1
+            l1 = l1.Next
+        } else {
+            curr.Next = l2
+            l2 = l2.Next
+        }
+        curr = curr.Next
+    }
+    if l1 != nil { curr.Next = l1 }
+    if l2 != nil { curr.Next = l2 }
+    return dummy.Next
+}`,
+    },
+  },
+};
+
+// Generic descriptions for problems without full details
+function getGenericDescription(num, title, difficulty) {
+  const diffText = difficulty === 'easy' ? '简单' : difficulty === 'medium' ? '中等' : '困难';
+  const diffClass = difficulty;
+
+  // Find kingdom and tags from LEVEL_DATA
+  let kingdomName = '';
+  let kingdomEmoji = '';
+  for (const [kid, levels] of Object.entries(LEVEL_DATA)) {
+    if (levels.find(l => l.number === parseInt(num))) {
+      const k = KINGDOMS.find(k => k.id === kid);
+      if (k) {
+        kingdomName = k.name;
+        kingdomEmoji = k.emoji;
+      }
+      break;
+    }
+  }
+
+  const kingdomTag = kingdomName ? `<span class="kingdom-tag" style="margin-left:8px;">${kingdomEmoji} ${kingdomName}</span>` : '';
+
+  const briefing = {
+    easy: `冒险者，${kingdomName ? '来自<strong>' + kingdomName + '</strong>的' : ''}一只<strong>基础魔物</strong>挡在了你的面前。它的招式简单直接，利用你所学的基本算法技巧即可化解。不要轻敌，稳步前进！`,
+    medium: `${kingdomName ? '在<strong>' + kingdomName + '</strong>深处，' : ''}一只<strong>精英魔物</strong>正在巡逻。它掌握了中级战斗技巧，需要你用巧妙的策略和灵活的思维来应对。观察它的弱点，制定你的作战计划！`,
+    hard: `警报！${kingdomName ? '<strong>' + kingdomName + '</strong>的' : ''}守护传说——<strong>远古龙族</strong>苏醒了！它的力量足以摧毁一整支冒险者小队。你需要调动所有学过的算法知识，甚至创新的思维，才能在这场史诗对决中存活。唯有最勇敢的灵魂才能书写胜利！`,
+  };
+
+  return `<h3>#${num}. ${title} <span class="diff-badge ${diffClass}">${diffText}</span>${kingdomTag}</h3>
+<div style="margin-top:10px;padding:12px 16px;background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius-sm);">
+  <p style="margin:0;font-size:14px;line-height:1.8;">${briefing[difficulty]}</p>
+</div>
+<div style="margin-top:12px;">
+  <h4>📋 任务详情</h4>
+  <p>本题来自 LeetCode 题库，编号 <strong>#${num}</strong> —— <em>${title}</em>。由于题目描述版权归 LeetCode 所有，完整的中文描述、示例和约束条件请访问：</p>
+  <pre style="margin-top:8px;">🔗 https://leetcode.cn/problems/${title.toLowerCase().replace(/[^\w\u4e00-\u9fa5]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}/</pre>
+</div>
+<h4>⚔️ 战斗策略</h4>
+<ul style="padding-left:20px;margin-bottom:0;">
+  <li>仔细阅读题目描述中的<strong>示例</strong>，理解输入输出格式</li>
+  <li>在 CODING ARENA 中编写你的解决方案代码</li>
+  <li>点击 <strong>RUN CODE</strong> 先进行代码检查</li>
+  <li>准备就绪后，点击 <strong>ATTACK!</strong> 发起最终挑战</li>
+</ul>`;
+}
+
+// ============================================================
+// CODE TEMPLATES
+// ============================================================
+const GENERIC_TEMPLATES = {
+  python: '# Write your solution here\n\nclass Solution:\n    \n    pass\n',
+  java: '// Write your solution here\n\nclass Solution {\n    \n}\n',
+  cpp: '// Write your solution here\n\nclass Solution {\npublic:\n    \n};\n',
+  javascript: '// Write your solution here\n\nvar solve = function() {\n    \n};\n',
+  go: '// Write your solution here\n\nfunc solve() {\n    \n}\n',
+};
+
+function getCodeTemplate(problemId, lang) {
+  const details = PROBLEM_DETAILS[problemId];
+  if (details && details.solutions && details.solutions[lang]) {
+    return details.solutions[lang];
+  }
+  return GENERIC_TEMPLATES[lang] || GENERIC_TEMPLATES.python;
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const state = {
+  currentMode: 'free',       // 'free' | 'adventure' | 'trials'
+  solvedProblems: [],        // array of problem number strings
+  adventureStage: 1,         // current adventure stage (1-indexed)
+  currentKingdom: null,
+  currentLevel: null,
+  currentLanguage: 'python',
+  currentPlaylistId: null,
+};
+
+// ============================================================
+// THEME SYSTEM
+// ============================================================
+const THEMES = {
+  dark: {
+    '--bg': '#0a0e17', '--surface': '#111827', '--card': '#151d2b',
+    '--border': '#2a3f5f', '--text': '#dde4f0', '--input-bg': '#0d1117',
+    '--code-bg': '#0d1420', '--text-dim': '#6a7b95',
+  },
+  light: {
+    '--bg': '#f5f5f0', '--surface': '#ffffff', '--card': '#fafaf7',
+    '--border': '#d4d4cc', '--text': '#1a1a2e', '--input-bg': '#f0f0ea',
+    '--code-bg': '#f0ede8', '--text-dim': '#5a5d6e',
+  },
+  ocean: {
+    '--bg': '#0a1628', '--surface': '#0f2240', '--card': '#152848',
+    '--border': '#2a4a78', '--text': '#c8ddf8', '--input-bg': '#09142e',
+    '--code-bg': '#0d1d33', '--text-dim': '#5d7a9e',
+  },
+  forest: {
+    '--bg': '#0a1a0e', '--surface': '#0f2412', '--card': '#152e18',
+    '--border': '#2a5a30', '--text': '#c8f0cc', '--input-bg': '#08120e',
+    '--code-bg': '#0c1e0f', '--text-dim': '#5a8a5d',
+  },
+  purple: {
+    '--bg': '#100a1e', '--surface': '#181028', '--card': '#201838',
+    '--border': '#3a2868', '--text': '#d8c8f8', '--input-bg': '#0e081e',
+    '--code-bg': '#150e28', '--text-dim': '#75609d',
+  },
+  sunset: {
+    '--bg': '#1e1208', '--surface': '#2a1a0e', '--card': '#352214',
+    '--border': '#5a3820', '--text': '#f0d8c0', '--input-bg': '#180e08',
+    '--code-bg': '#24150d', '--text-dim': '#8d6f58',
+  },
+};
+
+const THEME_NAMES = {
+  dark: '暗夜', light: '晨曦', ocean: '深海',
+  forest: '翠林', purple: '紫晶', sunset: '余晖',
+};
+
+const THEME_ORDER = ['dark', 'light', 'ocean', 'forest', 'purple', 'sunset'];
+
+function getCurrentTheme() {
+  try {
+    const stored = localStorage.getItem('theme');
+    if (stored && THEMES[stored]) return stored;
+  } catch (e) {}
+  return 'dark';
+}
+
+function applyTheme(themeKey) {
+  const theme = THEMES[themeKey];
+  const root = document.documentElement;
+  for (const [prop, value] of Object.entries(theme)) {
+    root.style.setProperty(prop, value);
+  }
+
+  // Toggle light-theme class for body
+  if (themeKey === 'light') {
+    document.body.classList.add('light-theme');
+  } else {
+    document.body.classList.remove('light-theme');
+  }
+
+  try { localStorage.setItem('theme', themeKey); } catch (e) {}
+}
+
+function cycleTheme() {
+  const current = getCurrentTheme();
+  const currentIdx = THEME_ORDER.indexOf(current);
+  const nextIdx = (currentIdx + 1) % THEME_ORDER.length;
+  const nextTheme = THEME_ORDER[nextIdx];
+  applyTheme(nextTheme);
+  showThemeLabel(THEME_NAMES[nextTheme]);
+}
+
+function showThemeLabel(name) {
+  // Remove existing label
+  const existing = document.querySelector('.theme-label');
+  if (existing) existing.remove();
+
+  const label = document.createElement('div');
+  label.className = 'theme-label';
+  label.textContent = '🎨 ' + name;
+  document.body.appendChild(label);
+
+  setTimeout(() => {
+    label.style.opacity = '0';
+    setTimeout(() => label.remove(), 300);
+  }, 1500);
+}
+
+// ============================================================
+// PERSISTENCE
+// ============================================================
+const STORAGE_KEY = 'algoKingdomQuestV2';
+
+function saveState() {
+  try {
+    const data = {
+      solvedProblems: state.solvedProblems,
+      adventureStage: state.adventureStage,
+      currentMode: state.currentMode,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+
+function loadState() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed.solvedProblems)) {
+        state.solvedProblems = parsed.solvedProblems;
+      }
+      if (typeof parsed.adventureStage === 'number') {
+        state.adventureStage = parsed.adventureStage;
+      }
+      if (parsed.currentMode) {
+        state.currentMode = parsed.currentMode;
+      }
+    }
+  } catch (e) {}
+}
+
+// ============================================================
+// COMPUTED STATS
+// ============================================================
+function getLV() {
+  return Math.floor(state.solvedProblems.length / 5) + 1;
+}
+
+function getXP() {
+  return state.solvedProblems.length * 150;
+}
+
+function getCoins() {
+  return state.solvedProblems.length * 35;
+}
+
+function isProblemSolved(problemNumber) {
+  return state.solvedProblems.includes(String(problemNumber));
+}
+
+function getReward(difficulty) {
+  switch (difficulty) {
+    case 'easy': return { xp: 50, coin: 10 };
+    case 'medium': return { xp: 120, coin: 30 };
+    case 'hard': return { xp: 250, coin: 60 };
+    default: return { xp: 50, coin: 10 };
+  }
+}
+
+// ============================================================
+// MODE SWITCHING
+// ============================================================
+function switchMode(mode) {
+  state.currentMode = mode;
+  saveState();
+
+  // Update mode tabs
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.mode-tab[data-mode="${mode}"]`).classList.add('active');
+
+  // Hide all mode screens
+  ['screenKingdom', 'screenAdventure', 'screenTrials', 'screenLevels', 'screenPlaylistDetail', 'screenBattle']
+    .forEach(id => document.getElementById(id).classList.remove('active'));
+
+  // Show correct screen
+  if (mode === 'free') {
+    document.getElementById('screenKingdom').classList.add('active');
+    renderKingdomSelect();
+    showToast('mode', '🗺️ 切换至：自由探索', '');
+    document.getElementById('hudMode').textContent = '自由探索';
+  } else if (mode === 'adventure') {
+    document.getElementById('screenAdventure').classList.add('active');
+    renderAdventurePath();
+    showToast('mode', '⚔️ 切换至：主线征程', '');
+    document.getElementById('hudMode').textContent = '主线征程';
+  } else if (mode === 'trials') {
+    document.getElementById('screenTrials').classList.add('active');
+    renderPlaylistGrid();
+    showToast('mode', '🏆 切换至：秘境试炼', '');
+    document.getElementById('hudMode').textContent = '秘境试炼';
+  }
+
+  state.currentKingdom = null;
+  state.currentLevel = null;
+  state.currentPlaylistId = null;
+  updateHUD();
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+
+function goToKingdomSelect() {
+  state.currentKingdom = null;
+  state.currentLevel = null;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screenKingdom').classList.add('active');
+  renderKingdomSelect();
+  updateHUD();
+}
+
+function enterKingdom(kingdomId) {
+  state.currentKingdom = kingdomId;
+  state.currentLevel = null;
+  showScreen('screenLevels');
+  renderLevelPath(kingdomId);
+  updateHUD();
+}
+
+function goToTrials() {
+  state.currentPlaylistId = null;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screenTrials').classList.add('active');
+  renderPlaylistGrid();
+}
+
+function enterPlaylist(playlistId) {
+  state.currentPlaylistId = playlistId;
+  showScreen('screenPlaylistDetail');
+  renderPlaylistDetail(playlistId);
+}
+
+function enterBattle(problemNumber, sourceKingdomId) {
+  // Use sourceKingdomId if provided, else try current state
+  let kingdomId = sourceKingdomId || state.currentKingdom || 'array';
+  state.currentKingdom = kingdomId;
+  state.currentLevel = String(problemNumber);
+  state.currentLanguage = 'python';
+  showScreen('screenBattle');
+  renderBattleArena(problemNumber);
+  updateHUD();
+
+  // Reset console
+  document.getElementById('consolePanel').classList.remove('show');
+  document.getElementById('testCasesPanel').classList.remove('show');
+  document.getElementById('codeEditorWrapper').style.display = 'flex';
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  if (tabBtns.length >= 3) {
+    tabBtns[0].classList.add('active');
+    tabBtns[1].classList.remove('active');
+    tabBtns[2].classList.remove('active');
+  }
+}
+
+function flee() {
+  if (state.currentMode === 'adventure') {
+    switchToCurrentModeScreen();
+  } else if (state.currentPlaylistId) {
+    enterPlaylist(state.currentPlaylistId);
+  } else if (state.currentKingdom) {
+    enterKingdom(state.currentKingdom);
+  } else {
+    switchToCurrentModeScreen();
+  }
+}
+
+function switchToCurrentModeScreen() {
+  switch (state.currentMode) {
+    case 'free': goToKingdomSelect(); break;
+    case 'adventure': showScreen('screenAdventure'); renderAdventurePath(); break;
+    case 'trials': goToTrials(); break;
+    default: goToKingdomSelect();
+  }
+}
+
+// ============================================================
+// RENDER: HUD
+// ============================================================
+function updateHUD() {
+  const lv = getLV();
+  const xp = getXP();
+  const coins = getCoins();
+  const defeated = state.solvedProblems.length;
+  const hpPercent = 100;
+
+  document.getElementById('hudLv').textContent = lv;
+  document.getElementById('hudHp').textContent = '100/100';
+  document.getElementById('hudHpBar').style.width = hpPercent + '%';
+  document.getElementById('hudXp').textContent = xp;
+  document.getElementById('hudCoin').textContent = coins;
+  document.getElementById('hudDefeated').textContent = defeated;
+
+  const hpBar = document.getElementById('hudHpBar');
+  if (hpPercent > 60) hpBar.style.background = 'var(--hp-green)';
+  else if (hpPercent > 30) hpBar.style.background = 'var(--hp-yellow)';
+  else hpBar.style.background = 'var(--hp-red)';
+
+  // Update mode indicator
+  const modeNames = { free: '自由探索', adventure: '主线征程', trials: '秘境试炼' };
+  document.getElementById('hudMode').textContent = modeNames[state.currentMode] || '自由探索';
+}
+
+// ============================================================
+// RENDER: KINGDOM SELECT
+// ============================================================
+function renderKingdomSelect() {
+  const grid = document.getElementById('kingdomGrid');
+  grid.innerHTML = KINGDOMS.map(k => {
+    const levels = LEVEL_DATA[k.id];
+    const totalStages = levels ? levels.length : 0;
+    const completed = levels ? levels.filter(l => isProblemSolved(l.number)).length : 0;
+    const progressPercent = totalStages > 0 ? (completed / totalStages) * 100 : 0;
+    const chaosClass = k.chaos ? ' chaos' : '';
+    const style = k.chaos ? '' : `background:${k.bg};border-color:${k.color}44;box-shadow:inset 0 0 30px ${k.glow};`;
+    const hoverGlow = k.chaos ? '' : `background:radial-gradient(circle at 50% 0%,${k.glow},${k.bg})`;
+
+    return `
+      <div class="kingdom-card${chaosClass}" style="${style}" onclick="enterKingdom('${k.id}')" onmouseenter="this.style.background='radial-gradient(circle at 50% 0%,${k.glow},${k.bg})';this.style.borderColor='${k.color}88';this.style.boxShadow='0 8px 32px ${k.glow}, inset 0 0 40px ${k.glow}'" onmouseleave="this.style.background='${k.bg}';this.style.borderColor='${k.color}44';this.style.boxShadow='inset 0 0 30px ${k.glow}'">
+        <div class="kingdom-header">
+          <span class="kingdom-emoji">${k.emoji}</span>
+          <span class="kingdom-name" style="color: ${k.chaos ? '#ffd700' : k.color}">${k.name}</span>
+        </div>
+        <div class="kingdom-stats">👾 ${k.total} 只魔物 | 🏆 ${completed}/${totalStages} 征服</div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" style="width: ${progressPercent}%;${progressPercent === 100 ? 'background: #ffd700;' : ''}"></div>
+        </div>
+        <div class="difficulty-pills">
+          <span class="diff-pill easy">简单 ${k.easy}</span>
+          <span class="diff-pill medium">中等 ${k.medium}</span>
+          <span class="diff-pill hard">困难 ${k.hard}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: LEVEL PATH (from Kingdom)
+// ============================================================
+function renderLevelPath(kingdomId) {
+  const kingdom = KINGDOMS.find(k => k.id === kingdomId);
+  const levels = LEVEL_DATA[kingdomId];
+
+  document.getElementById('levelKingdomTitle').innerHTML =
+    `${kingdom.emoji} ${kingdom.name} <span>· STAGE SELECT</span>`;
+
+  const list = document.getElementById('levelList');
+  list.innerHTML = levels.map((lvl, idx) => {
+    const solved = isProblemSolved(lvl.number);
+
+    let statusClass, statusIcon, onclick;
+    if (solved) {
+      statusClass = 'completed';
+      statusIcon = '✅';
+      onclick = `enterBattle(${lvl.number}, '${kingdomId}')`;
+    } else {
+      statusClass = 'available';
+      statusIcon = '⚔️';
+      onclick = `enterBattle(${lvl.number}, '${kingdomId}')`;
+    }
+
+    return `
+      <div class="level-card ${statusClass}" onclick="${onclick}">
+        <div class="level-stage">STAGE<br>${idx + 1}</div>
+        <div class="level-info">
+          <div class="level-num">#${lvl.number}</div>
+          <div class="level-title">${lvl.title}</div>
+          <div class="level-meta">
+            <span class="diff-badge ${lvl.difficulty}">${lvl.difficulty === 'easy' ? '简单' : lvl.difficulty === 'medium' ? '中等' : '困难'}</span>
+          </div>
+        </div>
+        <span class="level-enemy">${lvl.enemy}</span>
+        <span class="level-status">${statusIcon}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: ADVENTURE PATH
+// ============================================================
+function renderAdventurePath() {
+  const maxStage = state.adventureStage;
+  const totalStages = ADVENTURE_STAGES.length;
+  const completedStages = ADVENTURE_STAGES.filter(s => isProblemSolved(s.number)).length;
+
+  // Progress indicator
+  document.getElementById('adventureProgress').innerHTML = `
+    <span class="stage-count">Stage ${completedStages} / ${totalStages}</span>
+    <div style="margin-top:6px;display:flex;align-items:center;gap:6px;justify-content:center;font-size:7px;color:var(--text-dim)">
+      <span>已清除 ${completedStages}/${totalStages} 个关卡</span>
+    </div>
+  `;
+
+  const path = document.getElementById('adventurePath');
+  path.innerHTML = ADVENTURE_STAGES.map((stage, idx) => {
+    const solved = isProblemSolved(stage.number);
+    const stageNum = idx + 1;
+    const isCurrent = stageNum === maxStage;
+    const isLocked = stageNum > maxStage;
+
+    let statusClass, statusIcon, onclick;
+    if (solved) {
+      statusClass = 'completed';
+      statusIcon = '✅';
+      onclick = `enterBattle(${stage.number}, '${stage.kingdom}')`;
+    } else if (!isLocked) {
+      statusClass = 'available';
+      statusIcon = '⚔️';
+      onclick = `enterBattle(${stage.number}, '${stage.kingdom}')`;
+    } else {
+      statusClass = 'locked';
+      statusIcon = '🔒';
+      onclick = '';
+    }
+
+    const kingdom = KINGDOMS.find(k => k.id === stage.kingdom);
+
+    const connector = `<div class="adventure-connector${isLocked ? ' locked' : (solved ? ' unlocked' : '')}"></div>`;
+
+    return `
+      <div class="adventure-stage-wrapper">
+        ${idx > 0 ? connector : ''}
+        <div class="adventure-stage ${statusClass}" onclick="${onclick}" id="adventureStage${stageNum}">
+          <div class="stage-number">${stageNum}</div>
+          <div class="stage-info">
+            <div class="stage-problem">#{${stage.number}}</div>
+            <div class="stage-title">${isLocked ? '???' : stage.title}</div>
+            <div class="stage-meta">
+              <span class="diff-badge ${stage.difficulty}">${isLocked ? '???' : (stage.difficulty === 'easy' ? '简单' : stage.difficulty === 'medium' ? '中等' : '困难')}</span>
+              ${isLocked ? '' : `<span class="kingdom-tag">${kingdom ? kingdom.emoji + ' ' + kingdom.name : ''}</span>`}
+            </div>
+          </div>
+          <span class="stage-enemy">${isLocked ? '❓' : stage.enemy}</span>
+          <span class="stage-status">${statusIcon}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: PLAYLIST GRID
+// ============================================================
+function renderPlaylistGrid() {
+  const grid = document.getElementById('playlistGrid');
+  grid.innerHTML = PLAYLISTS.map(pl => {
+    const solved = pl.problems.filter(p => isProblemSolved(p.number)).length;
+    const total = pl.problems.length;
+    const progressPercent = total > 0 ? (solved / total) * 100 : 0;
+
+    return `
+      <div class="playlist-card ${pl.cssClass}" onclick="enterPlaylist('${pl.id}')">
+        <div class="playlist-header">
+          <span class="playlist-emoji">${pl.emoji}</span>
+          <span class="playlist-name">${pl.name}</span>
+        </div>
+        <div class="playlist-stats">📋 ${total} 题 | 🏆 ${solved}/${total} 完成</div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" style="width: ${progressPercent}%;${progressPercent === 100 ? 'background: #ffd700;' : ''}"></div>
+        </div>
+        <div class="difficulty-pills">
+          <span class="diff-pill easy">简单 ${pl.easy}</span>
+          <span class="diff-pill medium">中等 ${pl.medium}</span>
+          <span class="diff-pill hard">困难 ${pl.hard}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: PLAYLIST DETAIL
+// ============================================================
+function renderPlaylistDetail(playlistId) {
+  const playlist = PLAYLISTS.find(p => p.id === playlistId);
+
+  document.getElementById('playlistDetailTitle').innerHTML =
+    `${playlist.emoji} ${playlist.name} <span style="font-size:8px;color:var(--text-dim)">· ${playlist.description}</span>`;
+
+  const list = document.getElementById('playlistProblemList');
+  list.innerHTML = playlist.problems.map(p => {
+    const solved = isProblemSolved(p.number);
+    const diffText = p.difficulty === 'easy' ? '简单' : p.difficulty === 'medium' ? '中等' : '困难';
+
+    return `
+      <div class="playlist-problem-item ${solved ? 'completed' : ''}" onclick="enterBattle(${p.number}, 'datastruct')">
+        <span class="problem-seq">#${p.seq}</span>
+        <span class="problem-name">${p.title}</span>
+        <span class="problem-diff"><span class="diff-badge ${p.difficulty}">${diffText}</span></span>
+        <span class="problem-status">${solved ? '✅' : '⚔️'}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: BATTLE ARENA
+// ============================================================
+function renderBattleArena(problemNumber) {
+  const num = String(problemNumber);
+  const details = PROBLEM_DETAILS[num];
+
+  let levelInfo = null;
+  for (const [kid, levels] of Object.entries(LEVEL_DATA)) {
+    const found = levels.find(l => l.number === parseInt(num));
+    if (found) { levelInfo = found; break; }
+  }
+
+  const enemy = details ? details.enemy : (levelInfo ? levelInfo.enemy : '👾');
+  const enemyName = details ? details.enemyName : (levelInfo ? 'UNKNOWN FOE' : 'MYSTERY CREATURE');
+  const difficulty = details ? details.difficulty : (levelInfo ? levelInfo.difficulty : 'easy');
+
+  document.getElementById('enemySprite').textContent = enemy;
+  document.getElementById('enemySprite').classList.remove('defeated');
+  document.getElementById('enemyName').textContent = enemyName + ' · ' + (difficulty === 'easy' ? '简单' : difficulty === 'medium' ? '中等' : '困难');
+  document.getElementById('enemyHpBar').style.width = '100%';
+  document.getElementById('enemyHpBar').style.background = 'var(--hp-green)';
+  document.getElementById('enemyHpText').textContent = '100 / 100';
+
+  const description = details
+    ? details.description
+    : getGenericDescription(num, levelInfo ? levelInfo.title : 'Unknown', difficulty);
+  document.getElementById('questBriefing').innerHTML = description;
+
+  document.getElementById('langSelect').value = state.currentLanguage;
+  document.getElementById('codeEditor').value = getCodeTemplate(num, state.currentLanguage);
+  updateLineNumbers();
+
+  // Populate test cases
+  populateTestCases(num, details);
+
+  // Setup solution section
+  setupSolutionSection(num, details);
+}
+
+// ============================================================
+// TEST CASES POPULATION
+// ============================================================
+function populateTestCases(problemNumber, details) {
+  const content = document.getElementById('testCasesContent');
+  if (!content) return;
+
+  const num = String(problemNumber);
+  if (details && details.testCases && details.testCases.length > 0) {
+    content.innerHTML = details.testCases.map((tc, i) => `
+      <div class="test-case-item">
+        <div class="tc-title">测试用例 ${i + 1}:</div>
+        <div class="tc-line">输入: ${tc.input}</div>
+        <div class="tc-line expected">期望输出: ${tc.expected}</div>
+        ${tc.explanation ? '<div class="tc-line" style="color:#667788;">解释: ' + tc.explanation + '</div>' : ''}
+      </div>
+    `).join('');
+  } else {
+    content.innerHTML = '<div class="tc-line" style="color:var(--text-dim);font-family:var(--font-pixel);font-size:10px;">此题目暂无预设测试用例。请参考题目描述中的示例。</div>';
+  }
+}
+
+// ============================================================
+// SOLUTION TOGGLE
+// ============================================================
+let currentReference = null;
+
+function setupSolutionSection(problemNumber, details) {
+  const section = document.getElementById('solutionSection');
+  const content = document.getElementById('solutionContent');
+  const codeEl = document.getElementById('solutionCode');
+  const langBtns = document.querySelectorAll('#solutionLangSelector .solution-lang-btn');
+  if (!section || !codeEl) return;
+
+  if (details && details.reference) {
+    currentReference = details.reference;
+    const hasSolutions = Object.keys(currentReference).length > 0;
+    if (hasSolutions) {
+      section.style.display = 'block';
+      content.classList.remove('show');
+
+      // Hide buttons for languages that don't have solutions
+      langBtns.forEach(btn => {
+        const lang = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
+        if (currentReference[lang]) {
+          btn.style.display = '';
+          btn.classList.remove('active');
+        } else {
+          btn.style.display = 'none';
+        }
+      });
+
+      // Default select first available language
+      const firstLang = Object.keys(currentReference)[0];
+      const firstBtn = document.querySelector(`#solutionLangSelector .solution-lang-btn[onclick*="${firstLang}"]`);
+      if (firstBtn) firstBtn.classList.add('active');
+      codeEl.textContent = currentReference[firstLang];
+      codeEl.classList.remove('show');
+
+      document.querySelector('.solution-toggle-btn').textContent = '💡 查看题解';
+      document.querySelector('.solution-toggle-btn').disabled = false;
+    } else {
+      section.style.display = 'none';
+    }
+  } else {
+    currentReference = null;
+    section.style.display = 'none';
+  }
+}
+
+function toggleSolution() {
+  const codeEl = document.getElementById('solutionCode');
+  const content = document.getElementById('solutionContent');
+  const btn = document.querySelector('.solution-toggle-btn');
+  if (!codeEl || !btn || !content) return;
+
+  if (content.classList.contains('show')) {
+    content.classList.remove('show');
+    codeEl.classList.remove('show');
+    btn.textContent = '💡 查看题解';
+  } else {
+    content.classList.add('show');
+    codeEl.classList.add('show');
+    btn.textContent = '💡 隐藏题解';
+    // Ensure first available language is shown
+    if (currentReference) {
+      const firstLang = Object.keys(currentReference)[0];
+      const firstBtn = document.querySelector(`#solutionLangSelector .solution-lang-btn[onclick*="${firstLang}"]`);
+      if (firstBtn) {
+        document.querySelectorAll('#solutionLangSelector .solution-lang-btn').forEach(b => b.classList.remove('active'));
+        firstBtn.classList.add('active');
+        codeEl.textContent = currentReference[firstLang];
+      }
+    }
+  }
+}
+
+function switchSolutionLang(lang) {
+  const codeEl = document.getElementById('solutionCode');
+  if (!codeEl || !currentReference) return;
+
+  // Update active button
+  document.querySelectorAll('#solutionLangSelector .solution-lang-btn').forEach(b => b.classList.remove('active'));
+  const targetBtn = document.querySelector(`#solutionLangSelector .solution-lang-btn[onclick*="${lang}"]`);
+  if (targetBtn) targetBtn.classList.add('active');
+
+  // Show corresponding code
+  if (currentReference[lang]) {
+    codeEl.textContent = currentReference[lang];
+  }
+}
+
+// ============================================================
+// LANGUAGE SWITCH
+// ============================================================
+function onLanguageChange() {
+  state.currentLanguage = document.getElementById('langSelect').value;
+  if (state.currentLevel) {
+    document.getElementById('codeEditor').value = getCodeTemplate(state.currentLevel, state.currentLanguage);
+    updateLineNumbers();
+  }
+}
+
+// ============================================================
+// LINE NUMBERS
+// ============================================================
+function updateLineNumbers() {
+  const editor = document.getElementById('codeEditor');
+  const lines = editor.value.split('\n').length;
+  const nums = Array.from({length: Math.max(lines, 1)}, (_, i) => i + 1).join('\n');
+  document.getElementById('lineNumbers').textContent = nums;
+}
+
+function syncScroll() {
+  document.getElementById('lineNumbers').scrollTop = document.getElementById('codeEditor').scrollTop;
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  const codeWrapper = document.getElementById('codeEditorWrapper');
+  const consolePanel = document.getElementById('consolePanel');
+  const testCasesPanel = document.getElementById('testCasesPanel');
+  const tabs = document.querySelectorAll('.tab-btn');
+
+  if (tab === 'code') {
+    codeWrapper.style.display = 'flex';
+    consolePanel.classList.remove('show');
+    testCasesPanel.classList.remove('show');
+    tabs[0].classList.add('active');
+    if (tabs[1]) tabs[1].classList.remove('active');
+    if (tabs[2]) tabs[2].classList.remove('active');
+  } else if (tab === 'console') {
+    codeWrapper.style.display = 'none';
+    consolePanel.classList.add('show');
+    testCasesPanel.classList.remove('show');
+    if (tabs[0]) tabs[0].classList.remove('active');
+    tabs[1].classList.add('active');
+    if (tabs[2]) tabs[2].classList.remove('active');
+  } else if (tab === 'cases') {
+    codeWrapper.style.display = 'none';
+    consolePanel.classList.remove('show');
+    testCasesPanel.classList.add('show');
+    if (tabs[0]) tabs[0].classList.remove('active');
+    if (tabs[1]) tabs[1].classList.remove('active');
+    tabs[2].classList.add('active');
+  }
+}
+
+// ============================================================
+// RUN CODE
+// ============================================================
+function runCode() {
+  const num = String(state.currentLevel);
+  const lang = state.currentLanguage;
+  const code = document.getElementById('codeEditor').value;
+
+  switchTab('console');
+  const consoleContent = document.getElementById('consoleContent');
+
+  consoleContent.innerHTML = '<div class="console-line info"><span class="console-prompt">></span> 正在运行测试用例...</div>';
+
+  setTimeout(() => {
+    let output = '';
+    output += '<div class="console-line info"><span class="console-prompt">></span> Language: ' + lang.toUpperCase() + '</div>';
+    output += '<div class="console-line info"><span class="console-prompt">></span> Code length: ' + code.split('\n').filter(l => l.trim()).length + ' lines</div>';
+
+    const details = PROBLEM_DETAILS[num];
+    if (details && details.testCases && details.testCases.length > 0) {
+      output += '<div style="margin-top:6px;"></div>';
+      details.testCases.forEach((tc, i) => {
+        output += '<div class="console-line info">测试用例 #' + (i + 1) + ':</div>';
+        output += '<div class="console-line" style="color:#8899aa;">  输入: ' + tc.input + '</div>';
+        output += '<div class="console-line" style="color:#8899aa;">  期望输出: ' + tc.expected + '</div>';
+        output += '<div class="console-line" style="color:var(--amber);">  ⚠ 未验证（需要后端判题系统）</div>';
+      });
+      output += '<div style="margin-top:6px;"></div>';
+      output += '<div class="console-line info"><span class="console-prompt">></span> 共 ' + details.testCases.length + ' 个测试用例，需判题系统验证。</div>';
+    } else {
+      output += '<div class="console-line info"><span class="console-prompt">></span> 此题目暂无预设测试用例。</div>';
+      output += '<div class="console-line info"><span class="console-prompt">></span> 代码格式验证通过。准备发起攻击！</div>';
+    }
+
+    output += '<div style="margin-top:4px;"></div>';
+    output += '<div class="console-line" style="color:var(--amber);"><span class="console-prompt">></span> 点击 ATTACK! 发起攻击挑战。</div>';
+
+    consoleContent.innerHTML = output;
+  }, 800);
+}
+
+// ============================================================
+// ATTACK!
+// ============================================================
+function attack() {
+  const num = String(state.currentLevel);
+
+  let levelInfo = null;
+  for (const [kid, levels] of Object.entries(LEVEL_DATA)) {
+    const found = levels.find(l => l.number === parseInt(num));
+    if (found) { levelInfo = found; break; }
+  }
+  const difficulty = levelInfo ? levelInfo.difficulty : 'easy';
+
+  const btns = document.querySelectorAll('.pixel-btn');
+  btns.forEach(b => b.disabled = true);
+
+  // Show test cases in console
+  switchTab('console');
+  const consoleContent = document.getElementById('consoleContent');
+  let tcOutput = '<div class="console-line info"><span class="console-prompt">></span> ⚔️ 发动攻击！正在运行测试用例...</div>';
+
+  const details = PROBLEM_DETAILS[num];
+  if (details && details.testCases && details.testCases.length > 0) {
+    details.testCases.forEach((tc, i) => {
+      tcOutput += '<div class="console-line info">测试用例 #' + (i + 1) + ':</div>';
+      tcOutput += '<div class="console-line" style="color:#8899aa;">  输入: ' + tc.input + '</div>';
+      tcOutput += '<div class="console-line" style="color:#8899aa;">  期望输出: ' + tc.expected + '</div>';
+      tcOutput += '<div class="console-line" style="color:var(--amber);">  ⚠ 未验证（需要后端判题系统）</div>';
+    });
+  }
+  consoleContent.innerHTML = tcOutput;
+
+  const isVictory = Math.random() < 0.75;
+
+  if (isVictory) {
+    setTimeout(() => {
+      const hpBar = document.getElementById('enemyHpBar');
+      const hpText = document.getElementById('enemyHpText');
+      hpBar.style.width = '0%';
+      hpBar.style.background = '#ff4444';
+      hpText.textContent = '0 / 100';
+
+      const sprite = document.getElementById('enemySprite');
+      setTimeout(() => sprite.classList.add('defeated'), 200);
+
+      showToast('victory', '🎉 VICTORY!', '测试用例预览通过！(需实装判题系统验证)');
+
+      // Mark as solved
+      const wasNewSolve = !isProblemSolved(num);
+      if (wasNewSolve) {
+        state.solvedProblems.push(num);
+      }
+
+      // Adventure mode: advance stage if this was the current stage
+      if (state.currentMode === 'adventure' && wasNewSolve) {
+        const currentStage = ADVENTURE_STAGES.find(s => s.number === parseInt(num));
+        if (currentStage && currentStage.stage === state.adventureStage) {
+          state.adventureStage = Math.min(state.adventureStage + 1, ADVENTURE_STAGES.length);
+        }
+      }
+
+      saveState();
+      setTimeout(() => updateHUD(), 400);
+
+      setTimeout(() => {
+        btns.forEach(b => b.disabled = false);
+        hpBar.style.width = '100%';
+        hpBar.style.background = 'var(--hp-green)';
+        hpText.textContent = '100 / 100';
+        document.getElementById('enemySprite').classList.remove('defeated');
+        document.getElementById('enemySprite').textContent = levelInfo ? levelInfo.enemy : '👾';
+
+        // Flash unlock effect on next stage in adventure mode
+        if (state.currentMode === 'adventure' && wasNewSolve) {
+          const nextStageEl = document.getElementById('adventureStage' + state.adventureStage);
+          if (nextStageEl) {
+            nextStageEl.classList.add('unlocking');
+            setTimeout(() => nextStageEl.classList.remove('unlocking'), 1500);
+          }
+        }
+      }, 2000);
+
+    }, 500);
+  } else {
+    setTimeout(() => {
+      showToast('defeat', '💀 DEFEATED!', '再试一次吧，冒险者！');
+      document.getElementById('enemyBar').style.animation = 'shake 0.5s ease';
+      setTimeout(() => {
+        document.getElementById('enemyBar').style.animation = '';
+        btns.forEach(b => b.disabled = false);
+      }, 500);
+    }, 500);
+  }
+}
+
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+function showToast(type, title, detail) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.innerHTML = title + (detail ? '<div class="toast xp">' + detail + '</div>' : '');
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'toastOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 2200);
+}
+
+// ============================================================
+// TAVERN MODAL
+// ============================================================
+function openTavern() {
+  const overlay = document.getElementById('tavernOverlay');
+  const list = document.getElementById('tavernList');
+
+  if (state.solvedProblems.length === 0) {
+    list.innerHTML = '<div class="tavern-empty">🏮 你还没有击败任何敌人，冒险者。<br>快去王国中挑战吧！</div>';
+  } else {
+    list.innerHTML = state.solvedProblems.map(num => {
+      let kingdomId = null;
+      for (const [kid, levels] of Object.entries(LEVEL_DATA)) {
+        if (levels.find(l => l.number === parseInt(num))) {
+          kingdomId = kid;
+          break;
+        }
+      }
+      const kingdom = KINGDOMS.find(k => k.id === kingdomId);
+      const level = kingdomId ? LEVEL_DATA[kingdomId].find(l => l.number === parseInt(num)) : null;
+
+      return `
+        <div class="tavern-item" onclick="enterBattle(${num}, '${kingdomId || 'array'}'); closeTavern();">
+          <span class="enemy-icon">${level ? level.enemy : '👾'}</span>
+          <span class="problem-id">#${num}</span>
+          <span class="problem-name">${level ? level.title : 'Unknown'}</span>
+          <span class="kingdom-tag">${kingdom ? kingdom.emoji + ' ' + kingdom.name : ''}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  overlay.classList.add('show');
+}
+
+function closeTavern() {
+  document.getElementById('tavernOverlay').classList.remove('show');
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  loadState();
+
+  // Initialize theme
+  applyTheme(getCurrentTheme());
+
+  const codeEditor = document.getElementById('codeEditor');
+  codeEditor.addEventListener('input', updateLineNumbers);
+  codeEditor.addEventListener('scroll', syncScroll);
+  codeEditor.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 4;
+      updateLineNumbers();
+    }
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault();
+      if (document.getElementById('screenBattle').classList.contains('active')) {
+        attack();
+      }
+    }
+    if (e.ctrlKey && e.key === 'r') {
+      e.preventDefault();
+      if (document.getElementById('screenBattle').classList.contains('active')) {
+        runCode();
+      }
+    }
+    if (e.key === 'Escape') {
+      if (document.getElementById('tavernOverlay').classList.contains('show')) {
+        closeTavern();
+      }
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+      e.preventDefault();
+      if (confirm('确定要重置所有进度吗？此操作不可撤销！')) {
+        state.solvedProblems = [];
+        state.adventureStage = 1;
+        saveState();
+        updateHUD();
+        renderKingdomSelect();
+        renderAdventurePath();
+        renderPlaylistGrid();
+        showToast('mode', '🗑️ 进度已重置', '');
+      }
+    }
+  });
+
+  // Close tavern on overlay click
+  document.getElementById('tavernOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeTavern();
+  });
+
+  // Switch back to saved mode on load
+  switchMode(state.currentMode);
+});
+
+// Expose for onclick handlers
+window.enterKingdom = enterKingdom;
+window.enterBattle = enterBattle;
+window.enterPlaylist = enterPlaylist;
+window.goToKingdomSelect = goToKingdomSelect;
+window.goToTrials = goToTrials;
+window.openTavern = openTavern;
+window.closeTavern = closeTavern;
+window.flee = flee;
+window.runCode = runCode;
+window.attack = attack;
+window.onLanguageChange = onLanguageChange;
+window.switchTab = switchTab;
+window.switchMode = switchMode;
+window.toggleSolution = toggleSolution;
+window.switchSolutionLang = switchSolutionLang;
+window.cycleTheme = cycleTheme;
+</script>
+</body>
+</html>

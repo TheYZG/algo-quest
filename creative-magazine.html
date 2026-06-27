@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Problem Archive — A Coding Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   RESET & BASE
+   ======================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #faf8f5;
+  --text: #1a1c2e;
+  --text-muted: #5a5d6e;
+  --accent: #ff6b6b;
+  --accent-deep: #e85d5d;
+  --border: #e8e4dc;
+  --card-bg: #f4f1eb;
+  --code-bg: #f0ede8;
+  --ink: rgba(26,28,46,0.06);
+  --gutter: clamp(1.5rem, 5vw, 4rem);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(210,200,180,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(200,190,170,0.1) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* ========================================
+   TYPOGRAPHY
+   ======================================== */
+h1, h2, h3, h4 { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+
+.display { font-family: 'Playfair Display', Georgia, serif; }
+.mono  { font-family: 'Space Mono', 'Courier New', monospace; }
+.grotesk { font-family: 'Space Grotesk', system-ui, sans-serif; }
+
+.italic { font-style: italic; }
+
+/* ========================================
+   LAYOUT
+   ======================================== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); }
+
+.page { display: none; }
+.page.active { display: block; }
+
+/* ========================================
+   TOP BAR
+   ======================================== */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem var(--gutter); border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px); background: rgba(250,248,245,0.85);
+  position: sticky; top: 0; z-index: 100;
+}
+.top-bar .logo { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.25rem; letter-spacing: 0.06em; color: var(--text); cursor: pointer; text-decoration: none; }
+.top-bar .logo span { color: var(--accent); }
+.top-nav { display: flex; gap: 2rem; list-style: none; }
+.top-nav a { text-decoration: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.2s; }
+.top-nav a:hover, .top-nav a.active { color: var(--text); }
+
+/* ========================================
+   HERO
+   ======================================== */
+.hero { padding: clamp(4rem, 10vw, 8rem) 0 clamp(3rem, 6vw, 5rem); text-align: center; position: relative; }
+.hero::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 60px; height: 1px; background: var(--text); opacity: 0.2;
+}
+.hero h1 {
+  font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 900; letter-spacing: -0.03em;
+  line-height: 1; margin-bottom: 1.25rem; color: var(--text);
+}
+.hero h1 span { color: var(--accent); display: inline; }
+.hero .subtitle {
+  font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 400;
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem); color: var(--text-muted);
+  max-width: 520px; margin: 0 auto; line-height: 1.5;
+}
+
+/* ========================================
+   STATS CARDS
+   ======================================== */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem; margin: 4rem 0 5rem;
+}
+.stat-card {
+  text-align: center; padding: 2rem 1.25rem;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 2px; transition: box-shadow 0.3s var(--ease), border-color 0.3s;
+}
+.stat-card:hover { border-color: var(--accent); box-shadow: 2px 2px 0 var(--ink); }
+.stat-card .stat-number {
+  font-family: 'Playfair Display', Georgia, serif; font-size: 2.5rem; font-weight: 900; color: var(--accent);
+  line-height: 1;
+}
+.stat-card .stat-label {
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); margin-top: 0.5rem;
+}
+
+/* ========================================
+   SEARCH
+   ======================================== */
+.search-section { margin-bottom: 4rem; }
+.search-wrap { max-width: 480px; margin: 0 auto; position: relative; }
+.search-wrap input {
+  width: 100%; padding: 0.75rem 0; border: none; border-bottom: 1px solid var(--border);
+  background: transparent; font-family: 'Space Grotesk', sans-serif; font-size: 1rem;
+  color: var(--text); outline: none; transition: border-color 0.3s;
+  letter-spacing: 0.02em;
+}
+.search-wrap input:focus { border-bottom-color: var(--text); }
+.search-wrap input::placeholder { color: var(--text-muted); opacity: 0.6; font-style: italic; }
+.search-wrap .search-icon {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 1rem; pointer-events: none;
+  transition: color 0.3s;
+}
+.search-wrap input:focus + .search-icon { color: var(--text); }
+
+.tags-filter { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1.25rem; }
+.tag-chip {
+  padding: 0.35rem 1rem; border: 1px solid var(--border); border-radius: 0;
+  font-size: 0.7rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; color: var(--text-muted); background: transparent;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.tag-chip:hover { border-color: var(--text); color: var(--text); }
+.tag-chip.active { border-color: var(--text); color: var(--bg); background: var(--text); }
+
+/* ========================================
+   PROBLEM LIST (Editorial)
+   ======================================== */
+.list-header {
+  font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem;
+  margin-bottom: 2.5rem; display: flex; align-items: baseline; gap: 1rem;
+}
+.list-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.problem-list { counter-reset: problem; }
+.problem-item {
+  display: grid; grid-template-columns: 80px 1fr auto 100px;
+  align-items: center; gap: 1.5rem;
+  padding: 1.75rem 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: all 0.3s var(--ease);
+  position: relative;
+}
+.problem-item::before {
+  counter-increment: problem; content: counter(problem, decimal-leading-zero);
+  font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.problem-item:hover { padding-left: 1rem; }
+.problem-item:hover::after {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 60%; background: var(--accent);
+}
+.problem-item .p-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
+.problem-item .p-desc { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.4; }
+.problem-item .p-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.problem-item .p-tags span { font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 0; }
+.problem-item .p-diff { text-align: right; }
+.p-diff-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
+.p-diff-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle; }
+.diff-easy .p-diff-dot { background: #4ecdc4; }
+.diff-easy .p-diff-label { color: #4ecdc4; }
+.diff-medium .p-diff-dot { background: #ffd93d; }
+.diff-medium .p-diff-label { color: #c4a200; }
+.diff-hard .p-diff-dot { background: var(--accent); }
+.diff-hard .p-diff-label { color: var(--accent); }
+
+.empty-state { text-align: center; padding: 4rem 0; font-family: 'Playfair Display', Georgia, serif; font-style: italic; color: var(--text-muted); font-size: 1.15rem; }
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.site-footer {
+  margin-top: 6rem; padding: 3rem 0; border-top: 1px solid var(--border);
+  text-align: center;
+}
+.site-footer .tagline { font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-size: 1.1rem; color: var(--text-muted); }
+.site-footer .credits { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); opacity: 0.5; margin-top: 0.75rem; }
+
+/* ========================================
+   DETAIL PAGE
+   ======================================== */
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  text-decoration: none; color: var(--text-muted); margin-bottom: 3rem;
+  transition: color 0.2s; cursor: pointer;
+}
+.back-link:hover { color: var(--text); }
+.back-link::before { content: '←'; font-size: 1rem; }
+
+.detail-header { margin-bottom: 3rem; }
+.detail-header .problem-number {
+  font-family: 'Space Mono', monospace; font-size: 0.85rem; color: var(--accent);
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.75rem;
+}
+.detail-header h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; line-height: 1.1; }
+.detail-meta {
+  display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.detail-meta .meta-item {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
+  display: flex; align-items: center; gap: 0.4rem;
+}
+
+.detail-grid { display: grid; grid-template-columns: 1fr 340px; gap: clamp(2rem, 5vw, 5rem); }
+
+/* Article Column */
+.article-col { }
+
+.article-col p { font-size: 1.05rem; line-height: 1.8; margin-bottom: 1.5rem; color: var(--text); }
+.article-col h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.6rem; font-weight: 700; margin: 2.5rem 0 1rem; }
+.article-col h3 { font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin: 2rem 0 0.75rem; }
+.article-col ul, .article-col ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
+.article-col li { line-height: 1.8; margin-bottom: 0.5rem; }
+
+/* Pull Quote */
+.pull-quote {
+  border-left: 3px solid var(--accent); padding: 1.5rem 2rem; margin: 2.5rem 0;
+  background: var(--card-bg); font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic; font-size: 1.2rem; line-height: 1.6; color: var(--text);
+}
+.pull-quote .attribution {
+  display: block; font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+  margin-top: 0.75rem; font-style: normal;
+}
+
+/* Code Block */
+.code-block {
+  position: relative; margin: 2rem 0; background: var(--code-bg);
+  border: 1px solid var(--border); overflow: visible;
+}
+.code-block .lang-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.code-block .lang-tab {
+  padding: 0.6rem 1.25rem; font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; color: var(--text-muted); background: transparent; border: none;
+  transition: all 0.2s;
+}
+.code-block .lang-tab:hover { color: var(--text); }
+.code-block .lang-tab.active { color: var(--text); background: var(--bg); border-bottom: 2px solid var(--accent); }
+.code-block pre {
+  padding: 1.5rem; margin: 0; overflow-x: auto; font-family: 'Space Mono', monospace;
+  font-size: 0.82rem; line-height: 1.7; color: var(--text); tab-size: 2;
+}
+.code-block .copy-btn {
+  position: absolute; top: 0.75rem; right: 0.75rem; padding: 0.3rem 0.8rem;
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text-muted);
+  transition: all 0.2s;
+}
+.code-block .copy-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* Sidebar */
+.sidebar-col { }
+.sidebar-section { margin-bottom: 2.5rem; }
+.sidebar-section h4 {
+  font-family: 'Playfair Display', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+  margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+}
+.related-item {
+  display: block; padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: padding 0.2s; text-decoration: none; color: inherit;
+}
+.related-item:hover { padding-left: 0.5rem; }
+.related-item .r-num {
+  font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.related-item .r-title { font-weight: 600; font-size: 0.9rem; margin-top: 0.15rem; }
+.related-item .r-diff { font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-top: 0.1rem; }
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.tag-list span {
+  font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.3rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* I/O examples table-like */
+.io-examples { margin: 2rem 0; }
+.io-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); padding: 1rem 0; }
+.io-row:first-child { border-top: 1px solid var(--border); }
+.io-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.io-value { font-family: 'Space Mono', monospace; font-size: 0.85rem; margin-top: 0.25rem; color: var(--text); }
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 860px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .sidebar-col { order: -1; }
+  .problem-item { grid-template-columns: 60px 1fr auto 80px; gap: 0.75rem; }
+  .problem-item .p-title { font-size: 1.1rem; }
+  .problem-item::before { font-size: 0.7rem; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .problem-item { grid-template-columns: 40px 1fr 60px; }
+  .problem-item .p-tags { display: none; }
+  .hero h1 { font-size: 2.5rem; }
+  .detail-header h1 { font-size: 1.8rem; }
+  .top-nav { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========================================
+     TOP BAR
+     ======================================== -->
+<header class="top-bar">
+  <a class="logo" href="#" onclick="showHome()">The<span>.</span>Archive</a>
+  <nav>
+    <ul class="top-nav">
+      <li><a href="#" class="active" onclick="showHome()">Problems</a></li>
+      <li><a href="#">Journal</a></li>
+      <li><a href="#">About</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ========================================
+     HOME PAGE
+     ======================================== -->
+<div id="home-page" class="page active">
+  <section class="hero">
+    <h1>The Problem <span>Archive</span></h1>
+    <p class="subtitle">A curated journal of algorithmic thought.<br>Eighteen problems. Infinite depth.</p>
+  </section>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-number">3,971</div>
+        <div class="stat-label">Problems</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">812</div>
+        <div class="stat-label">Easy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">1,847</div>
+        <div class="stat-label">Medium</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">1,312</div>
+        <div class="stat-label">Hard</div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-section">
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search the archive..." oninput="filterProblems()">
+        <span class="search-icon">⌕</span>
+      </div>
+      <div class="tags-filter" id="tag-filters"></div>
+    </div>
+
+    <!-- Problem List -->
+    <div class="list-header">Table of Contents</div>
+    <div class="problem-list" id="problem-list"></div>
+    <div class="empty-state" id="empty-state" style="display:none;">No entries match your search.</div>
+  </div>
+
+  <footer class="site-footer">
+    <p class="tagline">"Elegance is not a luxury — it is a prerequisite."</p>
+    <p class="credits">The Problem Archive · Edition MMXXVI</p>
+  </footer>
+</div>
+
+<!-- ========================================
+     DETAIL PAGE
+     ======================================== -->
+<div id="detail-page" class="page"></div>
+
+<script>
+// ========================================
+// DATA: 18 Problems
+// ========================================
+const PROBLEMS = [
+  { id: 1,   title: "Two Sum",                 diff: "easy",   tags: ["array","hash-table"],      desc: "Find two numbers that add up to a target value in an array." },
+  { id: 2,   title: "Add Two Numbers",          diff: "medium", tags: ["linked-list","math"],     desc: "Add two numbers represented as linked lists and return the sum." },
+  { id: 3,   title: "Longest Substring",        diff: "medium", tags: ["string","sliding-window"],desc: "Find the length of the longest substring without repeating characters." },
+  { id: 4,   title: "Median of Two Arrays",     diff: "hard",   tags: ["array","binary-search"],  desc: "Find the median of two sorted arrays in logarithmic time." },
+  { id: 5,   title: "Longest Palindromic Substring", diff: "medium", tags: ["string","dp"],     desc: "Find the longest palindromic substring in a given string." },
+  { id: 11,  title: "Container With Most Water", diff: "medium", tags: ["array","two-pointers"], desc: "Find two lines that together with the x-axis form a container holding the most water." },
+  { id: 15,  title: "Three Sum",                diff: "medium", tags: ["array","two-pointers"],  desc: "Find all unique triplets in the array that sum to zero." },
+  { id: 20,  title: "Valid Parentheses",        diff: "easy",   tags: ["string","stack"],         desc: "Determine if the input string of brackets is valid." },
+  { id: 22,  title: "Generate Parentheses",     diff: "medium", tags: ["string","backtracking"],  desc: "Generate all combinations of well-formed parentheses." },
+  { id: 23,  title: "Merge k Sorted Lists",     diff: "hard",   tags: ["linked-list","heap"],     desc: "Merge k sorted linked lists into one sorted linked list." },
+  { id: 33,  title: "Search in Rotated Array",  diff: "medium", tags: ["array","binary-search"],  desc: "Search for a target value in a rotated sorted array." },
+  { id: 42,  title: "Trapping Rain Water",      diff: "hard",   tags: ["array","two-pointers"],   desc: "Compute how much water can be trapped after raining." },
+  { id: 46,  title: "Permutations",             diff: "medium", tags: ["array","backtracking"],   desc: "Return all possible permutations of a collection of distinct integers." },
+  { id: 53,  title: "Maximum Subarray",         diff: "easy",   tags: ["array","dp"],             desc: "Find the contiguous subarray with the largest sum." },
+  { id: 70,  title: "Climbing Stairs",          diff: "easy",   tags: ["dp"],                     desc: "Count distinct ways to climb to the top of a staircase." },
+  { id: 76,  title: "Minimum Window Substring", diff: "hard",   tags: ["string","sliding-window"],desc: "Find the minimum window substring containing all target characters." },
+  { id: 121, title: "Best Time to Buy & Sell Stock", diff: "easy", tags: ["array","dp"],        desc: "Maximize profit by choosing a single day to buy and a different day to sell." },
+  { id: 156, title: "Binary Tree Upside Down",  diff: "medium", tags: ["tree","dfs"],            desc: "Flip a binary tree upside down — the left child becomes the new root." },
+];
+
+// ========================================
+// RENDER HOME
+// ========================================
+function renderTagFilters(activeTag) {
+  const allTags = [...new Set(PROBLEMS.flatMap(p => p.tags))];
+  const container = document.getElementById('tag-filters');
+  container.innerHTML = '<span class="tag-chip' + (!activeTag ? ' active' : '') + '" onclick="setTag(null)">All</span>' +
+    allTags.map(t => '<span class="tag-chip' + (activeTag === t ? ' active' : '') + '" onclick="setTag(\'' + t + '\')">' + t + '</span>').join('');
+}
+
+let currentTag = null;
+let searchQuery = '';
+
+function setTag(tag) {
+  currentTag = tag;
+  renderTagFilters(tag);
+  renderProblemList();
+}
+
+function filterProblems() {
+  searchQuery = document.getElementById('search-input').value.toLowerCase();
+  renderProblemList();
+}
+
+function getDiffClass(diff) { return diff === 'easy' ? 'diff-easy' : diff === 'hard' ? 'diff-hard' : 'diff-medium'; }
+function getDiffLabel(diff) { return diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'; }
+
+function renderProblemList() {
+  let filtered = PROBLEMS;
+  if (currentTag) filtered = filtered.filter(p => p.tags.includes(currentTag));
+  if (searchQuery) filtered = filtered.filter(p => p.title.toLowerCase().includes(searchQuery) || p.desc.toLowerCase().includes(searchQuery) || p.tags.some(t => t.includes(searchQuery)));
+
+  const list = document.getElementById('problem-list');
+  const empty = document.getElementById('empty-state');
+
+  if (filtered.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = filtered.map(p => `
+    <div class="problem-item ${getDiffClass(p.diff)}" onclick="showDetail(${p.id})">
+      <div>
+        <div class="p-title">${p.title}</div>
+        <div class="p-desc">${p.desc}</div>
+      </div>
+      <div class="p-tags">${p.tags.map(t => '<span>' + t + '</span>').join('')}</div>
+      <div class="p-diff">
+        <span class="p-diff-dot"></span><span class="p-diff-label">${getDiffLabel(p.diff)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========================================
+// SHOW HOME
+// ========================================
+function showHome() {
+  document.getElementById('home-page').classList.add('active');
+  document.getElementById('detail-page').classList.remove('active');
+  document.getElementById('detail-page').innerHTML = '';
+  window.scrollTo(0, 0);
+  document.querySelector('.top-nav a').classList.add('active');
+}
+
+// ========================================
+// SHOW DETAIL
+// ========================================
+function showDetail(id) {
+  const p = PROBLEMS.find(x => x.id === id);
+  if (!p) return showHome();
+
+  document.getElementById('home-page').classList.remove('active');
+  const detailPage = document.getElementById('detail-page');
+  detailPage.classList.add('active');
+
+  // Related problems: same tags or same diff, excluding current
+  const related = PROBLEMS.filter(x => x.id !== id && (x.tags.some(t => p.tags.includes(t)) || x.diff === p.diff)).slice(0, 5);
+
+  // Generate description content based on the problem
+  const descriptions = getProblemDescription(p);
+
+  detailPage.innerHTML = `
+  <div class="container" style="padding-top:3rem;">
+    <a class="back-link" onclick="showHome()">Return to the Archive</a>
+
+    <div class="detail-header">
+      <div class="problem-number">Problem №&thinsp;${String(p.id).padStart(3,'0')}</div>
+      <h1>${p.title}</h1>
+      <div class="detail-meta">
+        <span class="meta-item ${getDiffClass(p.diff)}"><span class="p-diff-dot"></span> ${getDiffLabel(p.diff)}</span>
+        <span class="meta-item">${p.tags.map(t => t.toUpperCase()).join(' · ')}</span>
+        <span class="meta-item">Accepted: 62.4%</span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="article-col">
+        ${descriptions}
+      </div>
+
+      <aside class="sidebar-col">
+        <div class="sidebar-section">
+          <h4>Related Problems</h4>
+          ${related.map(r => `
+            <div class="related-item" onclick="showDetail(${r.id})">
+              <div class="r-num">№&thinsp;${String(r.id).padStart(3,'0')}</div>
+              <div class="r-title">${r.title}</div>
+              <div class="r-diff">${getDiffLabel(r.diff)}</div>
+            </div>
+          `).join('')}
+          ${related.length === 0 ? '<p style="color:var(--text-muted);font-style:italic;font-size:0.85rem;">No related problems found.</p>' : ''}
+        </div>
+
+        <div class="sidebar-section">
+          <h4>Topics</h4>
+          <div class="tag-list">${p.tags.map(t => '<span>' + t + '</span>').join('')}</div>
+        </div>
+
+        <div class="sidebar-section">
+          <h4>Journal</h4>
+          <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.6;font-style:italic;">
+            "The most elegant solutions are often the simplest. Resist the urge to over-engineer."
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p class="tagline">"Elegance is not a luxury — it is a prerequisite."</p>
+    <p class="credits">The Problem Archive · Edition MMXXVI</p>
+  </footer>
+  `;
+
+  window.scrollTo(0, 0);
+  document.querySelector('.top-nav a').classList.remove('active');
+}
+
+// ========================================
+// PROBLEM DESCRIPTIONS (Rich Editorial)
+// ========================================
+function getProblemDescription(p) {
+  const map = {
+    1: `
+      <h2>The Classic Opening</h2>
+      <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return the indices of the two numbers such that they add up to <code>target</code>. You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.</p>
+      <p>The answer can be returned in any order. This is perhaps the most famous algorithmic problem — a rite of passage for every programmer.</p>
+
+      <div class="pull-quote">
+        "When you can measure what you are speaking about, and express it in numbers, you know something about it."
+        <span class="attribution">— Lord Kelvin</span>
+      </div>
+
+      <h3>Examples</h3>
+      <div class="io-examples">
+        <div class="io-row"><div><span class="io-label">Input</span><div class="io-value">nums = [2, 7, 11, 15], target = 9</div></div><div><span class="io-label">Output</span><div class="io-value">[0, 1]</div></div></div>
+        <div class="io-row"><div><span class="io-label">Input</span><div class="io-value">nums = [3, 2, 4], target = 6</div></div><div><span class="io-label">Output</span><div class="io-value">[1, 2]</div></div></div>
+        <div class="io-row"><div><span class="io-label">Input</span><div class="io-value">nums = [3, 3], target = 6</div></div><div><span class="io-label">Output</span><div class="io-value">[0, 1]</div></div></div>
+      </div>
+
+      <h3>Approach</h3>
+      <p>A hash map gives us <strong>O(n)</strong> time complexity. As we iterate, we check if the complement (target − current) exists in the map. If it does, we've found the pair.</p>
+
+      ${renderCodeBlock(['Python', 'JavaScript', 'C++'], {
+        Python: `def twoSum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i`,
+        JavaScript: `function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const comp = target - nums[i];\n    if (map.has(comp)) return [map.get(comp), i];\n    map.set(nums[i], i);\n  }\n}`,
+        'C++': `vector<int> twoSum(vector<int>& nums, int target) {\n    unordered_map<int, int> map;\n    for (int i = 0; i < nums.size(); i++) {\n        int comp = target - nums[i];\n        if (map.count(comp)) return {map[comp], i};\n        map[nums[i]] = i;\n    }\n    return {};\n}`,
+      })}
+    `,
+    156: `
+      <h2>The Inversion</h2>
+      <p>Given the <code>root</code> of a binary tree, turn the tree upside down. The operation is defined as follows:</p>
+      <ul>
+        <li>The <strong>left child</strong> becomes the new root.</li>
+        <li>The original root becomes the <strong>right child</strong> of the new root.</li>
+        <li>The original right child becomes the <strong>left child</strong> of the original root.</li>
+        <li>This transformation propagates recursively down the left spine of the tree.</li>
+      </ul>
+
+      <div class="pull-quote">
+        "Sometimes the most profound solutions come from looking at a problem from an entirely different angle — or upside down."
+        <span class="attribution">— Anonymous</span>
+      </div>
+
+      <p>The problem is deceptively simple in concept, but the recursive relationship requires careful thought. Think of it as rotating the tree 90 degrees clockwise along the leftmost path.</p>
+
+      <h3>Examples</h3>
+      <div class="io-examples">
+        <div class="io-row"><div><span class="io-label">Input</span><div class="io-value">root = [1, 2, 3, 4, 5]</div></div><div><span class="io-label">Output</span><div class="io-value">[4, 5, 2, null, null, 3, 1]</div></div></div>
+        <div class="io-row"><div><span class="io-label">Input</span><div class="io-value">root = []</div></div><div><span class="io-label">Output</span><div class="io-value">[]</div></div></div>
+        <div class="io-row"><div><span class="io-label">Input</span><div class="io-value">root = [1]</div></div><div><span class="io-label">Output</span><div class="io-value">[1]</div></div></div>
+      </div>
+
+      <h3>Constraints</h3>
+      <ul>
+        <li>The number of nodes in the tree is in the range <code>[0, 10]</code>.</li>
+        <li><code>1 &le; Node.val &le; 10</code></li>
+        <li>Every node has either 0 or 2 children.</li>
+      </ul>
+
+      <h3>Approach</h3>
+      <p>We can solve this recursively by processing the leftmost path. At each step, the left child's left and right pointers are reassigned: the left child's right becomes the current node, and the left child's left becomes the current node's right child.</p>
+      <p>The key insight is that we only need to traverse the <strong>left spine</strong> of the tree. Each recursive call returns the new root of the transformed subtree.</p>
+
+      ${renderCodeBlock(['Python', 'JavaScript', 'C++'], {
+        Python: `def upsideDownBinaryTree(root):\n    if not root or not root.left:\n        return root\n    new_root = upsideDownBinaryTree(root.left)\n    root.left.left = root.right\n    root.left.right = root\n    root.left = None\n    root.right = None\n    return new_root`,
+        JavaScript: `function upsideDownBinaryTree(root) {\n  if (!root || !root.left) return root;\n  const newRoot = upsideDownBinaryTree(root.left);\n  root.left.left = root.right;\n  root.left.right = root;\n  root.left = null;\n  root.right = null;\n  return newRoot;\n}`,
+        'C++': `TreeNode* upsideDownBinaryTree(TreeNode* root) {\n    if (!root || !root->left) return root;\n    TreeNode* newRoot = upsideDownBinaryTree(root->left);\n    root->left->left = root->right;\n    root->left->right = root;\n    root->left = nullptr;\n    root->right = nullptr;\n    return newRoot;\n}`,
+      })}
+
+      <h3>Complexity Analysis</h3>
+      <ul>
+        <li><strong>Time:</strong> O(n) — each node is visited exactly once along the left spine.</li>
+        <li><strong>Space:</strong> O(h) — recursion stack depth equals the height of the left spine, where h is the tree height.</li>
+      </ul>
+    `,
+  };
+
+  // Default description for other problems
+  const defaultDesc = `
+    <h2>The Problem</h2>
+    <p>${p.desc} This problem tests your understanding of <strong>${p.tags.join(' and ')}</strong> concepts — a fundamental building block in any serious programmer's toolkit.</p>
+
+    <div class="pull-quote">
+      "Simplicity is the ultimate sophistication."
+      <span class="attribution">— Leonardo da Vinci</span>
+    </div>
+
+    <h3>Key Insight</h3>
+    <p>The elegant solution lies in recognizing the underlying pattern. Most problems in this category can be solved efficiently by applying the right data structure or algorithmic paradigm.</p>
+
+    ${renderCodeBlock(['Python', 'JavaScript', 'C++'], {
+      Python: `def solution(input_data):\n    # Your elegant implementation here\n    result = process(input_data)\n    return result\n\n# Complexity: O(n) time, O(1) space`,
+      JavaScript: `function solution(input) {\n  // Your elegant implementation here\n  const result = process(input);\n  return result;\n}\n\n// Complexity: O(n) time, O(1) space`,
+      'C++': `auto solution(const Input& input) {\n    // Your elegant implementation here\n    auto result = process(input);\n    return result;\n}\n\n// Complexity: O(n) time, O(1) space`,
+    })}
+
+    <h3>Complexity</h3>
+    <ul>
+      <li><strong>Time:</strong> O(n) — linear traversal of the input.</li>
+      <li><strong>Space:</strong> O(1) — constant auxiliary space.</li>
+    </ul>
+  `;
+
+  return map[p.id] || defaultDesc;
+}
+
+function renderCodeBlock(langs, codeMap) {
+  const langTabs = langs.map((l, i) =>
+    `<button class="lang-tab${i === 0 ? ' active' : ''}" onclick="switchLang(this, '${l}')">${l}</button>`
+  ).join('');
+
+  const codePanels = langs.map((l, i) =>
+    `<pre class="code-panel" data-lang="${l}" style="display:${i === 0 ? 'block' : 'none'}"><code>${escapeHtml(codeMap[l])}</code></pre>`
+  ).join('');
+
+  return `
+    <div class="code-block">
+      <div class="lang-tabs">${langTabs}</div>
+      ${codePanels}
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>`;
+}
+
+function switchLang(btn, lang) {
+  const block = btn.closest('.code-block');
+  block.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  block.querySelectorAll('.code-panel').forEach(p => {
+    p.style.display = p.dataset.lang === lang ? 'block' : 'none';
+  });
+}
+
+function copyCode(btn) {
+  const block = btn.closest('.code-block');
+  const visible = block.querySelector('.code-panel[style*="block"]') || block.querySelector('.code-panel');
+  const text = visible ? visible.textContent : '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  }).catch(() => {});
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ========================================
+// INIT
+// ========================================
+renderTagFilters(null);
+renderProblemList();
+</script>
+</body>
+</html>

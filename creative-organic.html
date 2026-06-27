@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeFlow — Creative Coding Practice</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-deep: #0d0d1a;
+  --purple: #7c3aed;
+  --blue: #3b82f6;
+  --pink: #ec4899;
+  --teal: #14b8a6;
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --easy: #22c55e;
+  --medium: #f59e0b;
+  --hard: #ef4444;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Grain Overlay ─── */
+.grain-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1000; opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ─── Animated Blobs ─── */
+.blobs-layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.45;
+  animation: morphBlob 12s ease-in-out infinite, floatBlob 20s ease-in-out infinite;
+}
+
+.blob-1 {
+  width: 600px; height: 600px; top: -150px; left: -100px;
+  background: radial-gradient(circle, rgba(124,58,237,0.6), rgba(59,130,246,0.3));
+  animation-duration: 14s, 22s;
+}
+.blob-2 {
+  width: 500px; height: 500px; top: 40%; right: -120px;
+  background: radial-gradient(circle, rgba(236,72,153,0.5), rgba(20,184,166,0.3));
+  animation-duration: 16s, 24s;
+}
+.blob-3 {
+  width: 450px; height: 450px; bottom: -100px; left: 30%;
+  background: radial-gradient(circle, rgba(59,130,246,0.5), rgba(124,58,237,0.3));
+  animation-duration: 13s, 26s;
+}
+.blob-4 {
+  width: 350px; height: 350px; top: 20%; left: 50%;
+  background: radial-gradient(circle, rgba(20,184,166,0.4), rgba(236,72,153,0.2));
+  animation-duration: 18s, 20s;
+}
+
+@keyframes morphBlob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50% { border-radius: 40% 60% 30% 70% / 50% 60% 30% 60%; }
+  75% { border-radius: 60% 40% 70% 30% / 60% 30% 70% 40%; }
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -40px) scale(1.05); }
+  50% { transform: translate(-20px, 20px) scale(0.95); }
+  75% { transform: translate(-30px, -10px) scale(1.02); }
+}
+
+/* ─── Main Container ─── */
+.main-container {
+  position: relative; z-index: 10; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+}
+
+/* ─── Glass Card ─── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: all 0.4s ease;
+}
+
+/* ─── Stats Bubbles ─── */
+.stats-bubbles {
+  position: fixed; z-index: 20; pointer-events: none;
+}
+
+.stat-bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 0.75rem 1.25rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  animation: floatBubble 6s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.stat-bubble:nth-child(1) { top: 80px; left: 80px; animation-delay: 0s; }
+.stat-bubble:nth-child(2) { top: 120px; right: 100px; animation-delay: -2s; }
+.stat-bubble:nth-child(3) { bottom: 150px; left: 120px; animation-delay: -4s; }
+.stat-bubble:nth-child(4) { bottom: 200px; right: 140px; animation-delay: -6s; }
+
+.stat-dot { width: 10px; height: 10px; border-radius: 50%; }
+.stat-dot.purple { background: var(--purple); box-shadow: 0 0 12px var(--purple); }
+.stat-dot.blue   { background: var(--blue);   box-shadow: 0 0 12px var(--blue); }
+.stat-dot.pink   { background: var(--pink);   box-shadow: 0 0 12px var(--pink); }
+.stat-dot.teal   { background: var(--teal);   box-shadow: 0 0 12px var(--teal); }
+
+.stat-label { font-size: 0.75rem; color: var(--text-muted); }
+.stat-value { font-size: 0.9rem; font-weight: 600; }
+
+@keyframes floatBubble {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ─── Homepage Card ─── */
+.home-card {
+  width: 100%; max-width: 800px;
+  padding: 2.5rem;
+  animation: cardEntry 0.8s ease-out;
+}
+
+@keyframes cardEntry {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Logo ─── */
+.logo-area {
+  display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;
+}
+.logo-icon {
+  width: 40px; height: 40px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; font-weight: 700; color: #fff;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+}
+.logo-text { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+.logo-badge {
+  font-size: 0.65rem; padding: 0.2rem 0.6rem; border-radius: 20px;
+  background: rgba(236,72,153,0.15); color: var(--pink); font-weight: 600;
+}
+
+/* ─── Search ─── */
+.search-wrap { position: relative; margin-bottom: 2rem; }
+.search-input {
+  width: 100%; padding: 0.85rem 1.25rem 0.85rem 3rem;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus {
+  border-color: rgba(124,58,237,0.4);
+  box-shadow: 0 0 20px rgba(124,58,237,0.1);
+}
+.search-icon {
+  position: absolute; left: 1.15rem; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 0.9rem;
+}
+
+/* ─── Problem List Header ─── */
+.list-header {
+  display: grid; grid-template-columns: 60px 1fr 100px 80px;
+  padding: 0.5rem 1rem; margin-bottom: 0.25rem;
+  font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ─── Problem Row ─── */
+.problem-row {
+  display: grid; grid-template-columns: 60px 1fr 100px 80px; align-items: center;
+  padding: 0.85rem 1rem; margin-bottom: 0.3rem;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.problem-row:hover {
+  background: var(--glass-hover);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(255,255,255,0.08);
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2), 0 0 16px rgba(124,58,237,0.05);
+}
+
+.problem-num { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.problem-title { font-weight: 500; font-size: 0.9rem; }
+.problem-title span { color: var(--text-muted); font-size: 0.7rem; margin-left: 0.4rem; }
+
+.difficulty {
+  font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.65rem;
+  border-radius: 20px; text-align: center;
+  justify-self: start;
+}
+.difficulty.easy   { background: rgba(34,197,94,0.1); color: var(--easy); }
+.difficulty.medium { background: rgba(245,158,11,0.1); color: var(--medium); }
+.difficulty.hard   { background: rgba(239,68,68,0.1); color: var(--hard); }
+
+.acceptance {
+  font-size: 0.75rem; color: var(--text-muted); text-align: right;
+}
+
+/* ─── Pagination ─── */
+.pagination {
+  display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+  margin-top: 1.5rem; padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.page-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  cursor: pointer; transition: all 0.3s ease;
+}
+.page-dot.active { background: var(--purple); box-shadow: 0 0 10px rgba(124,58,237,0.4); width: 24px; border-radius: 4px; }
+
+/* ══════════════════ DETAIL VIEW ══════════════════ */
+.detail-view { display: none; }
+
+.detail-container {
+  width: 100%; max-width: 1200px; padding: 1rem;
+  animation: fadeSlideIn 0.5s ease-out;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-topbar {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-secondary); font-size: 0.85rem;
+  cursor: pointer; transition: all 0.3s ease;
+}
+.back-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.detail-number { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; }
+
+.split-layout {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  min-height: 560px;
+}
+
+/* ─── Gradients separator ─── */
+.gradient-separator {
+  width: 2px; min-height: 100%;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    var(--purple) 20%,
+    var(--pink) 50%,
+    var(--teal) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px rgba(124,58,237,0.3);
+  border-radius: 1px;
+}
+
+/* ─── Description Panel ─── */
+.desc-panel {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px 0 0 20px;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.desc-panel::-webkit-scrollbar { width: 4px; }
+.desc-panel::-webkit-scrollbar-track { background: transparent; }
+.desc-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.desc-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; letter-spacing: -0.01em; }
+
+.desc-badges { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+
+.tag-badge {
+  font-size: 0.7rem; padding: 0.25rem 0.75rem; border-radius: 20px;
+  background: rgba(124,58,237,0.12); color: var(--purple);
+  border: 1px solid rgba(124,58,237,0.2);
+}
+
+.desc-section { margin-bottom: 1.5rem; }
+.desc-section h3 {
+  font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 0.5rem;
+}
+.desc-section p, .desc-section li {
+  font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65;
+}
+.desc-section ul { padding-left: 1.25rem; }
+.desc-section li { margin-bottom: 0.3rem; }
+
+.example-block {
+  background: rgba(0,0,0,0.2); border-radius: 10px; padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.example-block .ex-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+.example-block pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.78rem; color: var(--text-primary); white-space: pre-wrap;
+}
+
+/* ─── Code Panel ─── */
+.code-panel {
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-left: none;
+  border-radius: 0 20px 20px 0;
+  display: flex; flex-direction: column;
+}
+
+.code-toolbar {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.lang-pill {
+  padding: 0.35rem 0.85rem; border-radius: 20px;
+  font-size: 0.72rem; cursor: pointer; transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03); color: var(--text-muted);
+}
+.lang-pill:hover { border-color: rgba(255,255,255,0.2); color: var(--text-secondary); }
+.lang-pill.active {
+  background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(59,130,246,0.15));
+  border-color: rgba(124,58,237,0.4); color: var(--text-primary);
+}
+
+.code-body {
+  flex: 1; padding: 1.25rem; position: relative; overflow: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem; line-height: 1.75; color: var(--text-primary);
+  white-space: pre;
+}
+
+.code-body::-webkit-scrollbar { width: 4px; }
+.code-body::-webkit-scrollbar-track { background: transparent; }
+.code-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+/* ─── Cursor ─── */
+.glowing-cursor {
+  display: inline-block; width: 2px; height: 1.1em;
+  background: var(--teal); margin-left: 2px; vertical-align: text-bottom;
+  box-shadow: 0 0 8px var(--teal), 0 0 16px var(--teal);
+  animation: cursorBlink 1s step-end infinite;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ─── Code syntax highlighting ─── */
+.code-keyword { color: #c792ea; }
+.code-type     { color: #82aaff; }
+.code-string   { color: #c3e88d; }
+.code-number   { color: #f78c6c; }
+.code-comment  { color: #546e7a; font-style: italic; }
+.code-func     { color: #82b1ff; }
+
+/* ─── Action Buttons ─── */
+.code-actions {
+  display: flex; gap: 0.75rem; padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.glow-btn {
+  padding: 0.55rem 1.5rem; border-radius: 12px;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  border: none; outline: none;
+  transition: all 0.3s ease;
+}
+
+.run-btn {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.run-btn:hover {
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.15);
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+}
+.submit-btn:hover {
+  box-shadow: 0 6px 24px rgba(124,58,237,0.45);
+  transform: translateY(-1px);
+}
+
+/* ─── Output Panel ─── */
+.output-panel {
+  margin-top: 0; padding: 1rem 1.25rem; max-height: 150px; overflow-y: auto;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+  color: var(--text-muted); display: none;
+}
+.output-panel.show { display: block; }
+.output-success { color: var(--easy); }
+.output-error { color: var(--hard); }
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .stats-bubbles { display: none; }
+  .home-card { padding: 1.5rem; }
+  .problem-row { grid-template-columns: 45px 1fr 70px 60px; padding: 0.75rem 0.75rem; }
+  .list-header { grid-template-columns: 45px 1fr 70px 60px; padding: 0.5rem 0.75rem; }
+  .split-layout { grid-template-columns: 1fr; }
+  .gradient-separator { display: none; }
+  .desc-panel { border-radius: 20px 20px 0 0; }
+  .code-panel { border-radius: 0 0 20px 20px; border-left: 1px solid var(--glass-border); border-top: none; }
+}
+
+@media (max-width: 600px) {
+  .problem-row { grid-template-columns: 35px 1fr 55px; }
+  .list-header { grid-template-columns: 35px 1fr 55px; }
+  .acceptance { display: none; }
+  .list-header > :last-child { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Grain Overlay -->
+<div class="grain-overlay"></div>
+
+<!-- Animated Blobs -->
+<div class="blobs-layer">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<!-- Stats Bubbles -->
+<div class="stats-bubbles">
+  <div class="stat-bubble">
+    <div class="stat-dot purple"></div>
+    <div><div class="stat-label">已解决</div><div class="stat-value">1,247</div></div>
+  </div>
+  <div class="stat-bubble">
+    <div class="stat-dot blue"></div>
+    <div><div class="stat-label">通过率</div><div class="stat-value">78.3%</div></div>
+  </div>
+  <div class="stat-bubble">
+    <div class="stat-dot pink"></div>
+    <div><div class="stat-label">排名</div><div class="stat-value">Top 12%</div></div>
+  </div>
+  <div class="stat-bubble">
+    <div class="stat-dot teal"></div>
+    <div><div class="stat-label">连续打卡</div><div class="stat-value">42 天</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════ HOMEPAGE ══════════════════ -->
+<div class="main-container" id="homeView">
+  <div class="glass-card home-card">
+    <!-- Logo -->
+    <div class="logo-area">
+      <div class="logo-icon">&lt;/&gt;</div>
+      <div class="logo-text">CodeFlow</div>
+      <div class="logo-badge">BETA</div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" class="search-input" id="searchInput"
+             placeholder="搜索题目、标签、编号...">
+    </div>
+
+    <!-- Problem List -->
+    <div class="list-header">
+      <span>#</span><span>题目</span><span>难度</span><span>通过率</span>
+    </div>
+    <div id="problemList"></div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ DETAIL VIEW ══════════════════ -->
+<div class="main-container detail-view" id="detailView">
+  <div class="detail-container">
+    <div class="detail-topbar">
+      <div class="back-btn" onclick="goHome()">
+        <span>&#8592;</span><span>返回</span>
+      </div>
+      <div class="detail-number" id="detailNumber">#156</div>
+      <div class="difficulty medium" id="detailDifficulty">Medium</div>
+    </div>
+
+    <div class="split-layout">
+      <!-- Left: Description -->
+      <div class="desc-panel" id="descPanel"></div>
+
+      <div class="gradient-separator"></div>
+
+      <!-- Right: Code -->
+      <div class="code-panel">
+        <div class="code-toolbar">
+          <div class="lang-pill active" data-lang="cpp" onclick="switchLang(this)">C++</div>
+          <div class="lang-pill" data-lang="java" onclick="switchLang(this)">Java</div>
+          <div class="lang-pill" data-lang="python" onclick="switchLang(this)">Python</div>
+          <div class="lang-pill" data-lang="javascript" onclick="switchLang(this)">JS</div>
+        </div>
+        <div class="code-body" id="codeBody"></div>
+        <div class="output-panel" id="outputPanel"></div>
+        <div class="code-actions">
+          <button class="glow-btn run-btn" onclick="runCode()">&#9654; 运行测试</button>
+          <button class="glow-btn submit-btn" onclick="submitCode()">&#10003; 提交代码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════ PROBLEMS DATA ═══════════════════════
+const problems = [
+  { id: 1, title: 'Two Sum', slug: 'two-sum', diff: 'easy', accept: 53.2,
+    tags: ['Array', 'Hash Table'],
+    desc: `Given an array of integers <strong>nums</strong> and an integer <strong>target</strong>, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.`,
+    ex: [{ input: 'nums = [2,7,11,15], target = 9', output: '[0,1]' }, { input: 'nums = [3,2,4], target = 6', output: '[1,2]' }],
+    code: { cpp: 'class Solution {\npublic:\n  vector<int> twoSum(vector<int>& nums, int target) {\n    unordered_map<int,int> map;\n    for (int i = 0; i < nums.size(); i++) {\n      int c = target - nums[i];\n      if (map.count(c)) return {map[c], i};\n      map[nums[i]] = i;\n    }\n    return {};\n  }\n};',
+            java: 'class Solution {\n  public int[] twoSum(int[] nums, int target) {\n    Map<Integer,Integer> map = new HashMap<>();\n    for (int i = 0; i < nums.length; i++) {\n      int c = target - nums[i];\n      if (map.containsKey(c))\n        return new int[]{map.get(c), i};\n      map.put(nums[i], i);\n    }\n    return new int[0];\n  }\n}',
+            python: 'class Solution:\n  def twoSum(self, nums, target):\n    seen = {}\n    for i, v in enumerate(nums):\n      c = target - v\n      if c in seen:\n        return [seen[c], i]\n      seen[v] = i',
+            javascript: 'function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const c = target - nums[i];\n    if (map.has(c)) return [map.get(c), i];\n    map.set(nums[i], i);\n  }\n}' }
+  },
+  { id: 2, title: 'Add Two Numbers', slug: 'add-two-numbers', diff: 'medium', accept: 43.1,
+    tags: ['Linked List', 'Math'],
+    desc: `You are given two <strong>non-empty</strong> linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit.\n\nAdd the two numbers and return the sum as a linked list.`,
+    ex: [{ input: 'l1 = [2,4,3], l2 = [5,6,4]', output: '[7,0,8]' }, { input: 'l1 = [0], l2 = [0]', output: '[0]' }],
+    code: { cpp: 'class Solution {\npublic:\n  ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {\n    ListNode dummy(0), *cur = &dummy;\n    int carry = 0;\n    while (l1 || l2 || carry) {\n      int sum = (l1 ? l1->val : 0) + (l2 ? l2->val : 0) + carry;\n      carry = sum / 10;\n      cur->next = new ListNode(sum % 10);\n      cur = cur->next;\n      if (l1) l1 = l1->next;\n      if (l2) l2 = l2->next;\n    }\n    return dummy.next;\n  }\n};',
+            java: 'class Solution {\n  public ListNode addTwoNumbers(ListNode l1, ListNode l2) {\n    ListNode dummy = new ListNode(0);\n    ListNode cur = dummy;\n    int carry = 0;\n    while (l1 != null || l2 != null || carry != 0) {\n      int s = (l1!=null?l1.val:0)+(l2!=null?l2.val:0)+carry;\n      carry = s / 10;\n      cur.next = new ListNode(s % 10);\n      cur = cur.next;\n      if (l1 != null) l1 = l1.next;\n      if (l2 != null) l2 = l2.next;\n    }\n    return dummy.next;\n  }\n}',
+            python: 'class Solution:\n  def addTwoNumbers(self, l1, l2):\n    dummy = cur = ListNode(0)\n    carry = 0\n    while l1 or l2 or carry:\n      s = (l1.val if l1 else 0) + (l2.val if l2 else 0) + carry\n      carry, v = divmod(s, 10)\n      cur.next = ListNode(v)\n      cur = cur.next\n      l1 = l1.next if l1 else None\n      l2 = l2.next if l2 else None\n    return dummy.next',
+            javascript: 'function addTwoNumbers(l1, l2) {\n  let dummy = new ListNode(0), cur = dummy;\n  let carry = 0;\n  while (l1 || l2 || carry) {\n    const s = (l1?.val ?? 0) + (l2?.val ?? 0) + carry;\n    carry = Math.floor(s / 10);\n    cur.next = new ListNode(s % 10);\n    cur = cur.next;\n    l1 = l1?.next; l2 = l2?.next;\n  }\n  return dummy.next;\n}' }
+  },
+  { id: 3, title: 'Longest Substring Without Repeating Characters', slug: 'longest-substring', diff: 'medium', accept: 35.1,
+    tags: ['String', 'Sliding Window', 'Hash Table'],
+    desc: `Given a string <strong>s</strong>, find the length of the longest substring without repeating characters.`,
+    ex: [{ input: 's = "abcabcbb"', output: '3' }, { input: 's = "bbbbb"', output: '1' }],
+    code: { cpp: 'class Solution {\npublic:\n  int lengthOfLongestSubstring(string s) {\n    vector<int> last(128, -1);\n    int ans = 0, start = -1;\n    for (int i = 0; i < s.size(); i++) {\n      start = max(start, last[s[i]]);\n      ans = max(ans, i - start);\n      last[s[i]] = i;\n    }\n    return ans;\n  }\n};',
+            java: 'class Solution {\n  public int lengthOfLongestSubstring(String s) {\n    int[] last = new int[128];\n    Arrays.fill(last, -1);\n    int ans = 0, start = -1;\n    for (int i = 0; i < s.length(); i++) {\n      start = Math.max(start, last[s.charAt(i)]);\n      ans = Math.max(ans, i - start);\n      last[s.charAt(i)] = i;\n    }\n    return ans;\n  }\n}',
+            python: 'class Solution:\n  def lengthOfLongestSubstring(self, s):\n    last = {}\n    ans = start = 0\n    for i, c in enumerate(s):\n      if c in last and last[c] >= start:\n        start = last[c] + 1\n      ans = max(ans, i - start + 1)\n      last[c] = i\n    return ans',
+            javascript: 'function lengthOfLongestSubstring(s) {\n  const last = new Map();\n  let ans = 0, start = 0;\n  for (let i = 0; i < s.length; i++) {\n    if (last.has(s[i]) && last.get(s[i]) >= start)\n      start = last.get(s[i]) + 1;\n    ans = Math.max(ans, i - start + 1);\n    last.set(s[i], i);\n  }\n  return ans;\n}' }
+  },
+  { id: 4, title: 'Median of Two Sorted Arrays', slug: 'median-two-arrays', diff: 'hard', accept: 41.2,
+    tags: ['Array', 'Binary Search', 'Divide & Conquer'],
+    desc: `Given two sorted arrays <strong>nums1</strong> and <strong>nums2</strong> of size m and n respectively, return the median of the two sorted arrays.\n\nThe overall run time complexity should be O(log (m+n)).`,
+    ex: [{ input: 'nums1 = [1,3], nums2 = [2]', output: '2.00000' }, { input: 'nums1 = [1,2], nums2 = [3,4]', output: '2.50000' }],
+    code: { cpp: 'class Solution {\npublic:\n  double findMedianSortedArrays(vector<int>& a, vector<int>& b) {\n    if (a.size() > b.size()) swap(a, b);\n    int n = a.size(), m = b.size(), half = (n + m + 1) / 2;\n    int l = 0, r = n;\n    while (l <= r) {\n      int i = (l + r) / 2, j = half - i;\n      int aL = i > 0 ? a[i-1] : INT_MIN;\n      int aR = i < n ? a[i] : INT_MAX;\n      int bL = j > 0 ? b[j-1] : INT_MIN;\n      int bR = j < m ? b[j] : INT_MAX;\n      if (aL <= bR && bL <= aR) {\n        if ((n+m)%2) return max(aL,bL);\n        return (max(aL,bL)+min(aR,bR))/2.0;\n      }\n      if (aL > bR) r = i - 1; else l = i + 1;\n    }\n    return 0;\n  }\n};',
+            java: 'class Solution {\n  public double findMedianSortedArrays(int[] a, int[] b) {\n    if (a.length > b.length) return findMedianSortedArrays(b,a);\n    int n = a.length, m = b.length, half = (n+m+1)/2;\n    int l = 0, r = n;\n    while (l <= r) {\n      int i = (l+r)/2, j = half - i;\n      int aL = i>0?a[i-1]:Integer.MIN_VALUE, aR = i<n?a[i]:Integer.MAX_VALUE;\n      int bL = j>0?b[j-1]:Integer.MIN_VALUE, bR = j<m?b[j]:Integer.MAX_VALUE;\n      if (aL <= bR && bL <= aR)\n        return (n+m)%2==1 ? Math.max(aL,bL) : (Math.max(aL,bL)+Math.min(aR,bR))/2.0;\n      if (aL > bR) r = i-1; else l = i+1;\n    }\n    return 0;\n  }\n}',
+            python: 'class Solution:\n  def findMedianSortedArrays(self, a, b):\n    if len(a) > len(b): a, b = b, a\n    n, m = len(a), len(b)\n    half = (n + m + 1) // 2\n    l, r = 0, n\n    while l <= r:\n      i = (l + r) // 2; j = half - i\n      aL = a[i-1] if i>0 else float("-inf")\n      aR = a[i] if i<n else float("inf")\n      bL = b[j-1] if j>0 else float("-inf")\n      bR = b[j] if j<m else float("inf")\n      if aL <= bR and bL <= aR:\n        if (n+m)%2: return max(aL,bL)\n        return (max(aL,bL)+min(aR,bR))/2\n      if aL > bR: r = i-1\n      else: l = i+1',
+            javascript: 'function findMedianSortedArrays(a, b) {\n  if (a.length > b.length) [a,b] = [b,a];\n  const n = a.length, m = b.length;\n  const half = Math.floor((n+m+1)/2);\n  let l = 0, r = n;\n  while (l <= r) {\n    const i = Math.floor((l+r)/2), j = half - i;\n    const aL = i>0?a[i-1]:-Infinity, aR = i<n?a[i]:Infinity;\n    const bL = j>0?b[j-1]:-Infinity, bR = j<m?b[j]:Infinity;\n    if (aL<=bR && bL<=aR)\n      return (n+m)%2 ? Math.max(aL,bL) : (Math.max(aL,bL)+Math.min(aR,bR))/2;\n    if (aL > bR) r = i-1; else l = i+1;\n  }\n}' }
+  },
+  { id: 5, title: 'Longest Palindromic Substring', slug: 'longest-palindrome', diff: 'medium', accept: 34.0,
+    tags: ['String', 'Dynamic Programming'],
+    desc: `Given a string <strong>s</strong>, return the longest palindromic substring in s.\n\nA substring is a contiguous sequence of characters within the string.`,
+    ex: [{ input: 's = "babad"', output: '"bab"' }, { input: 's = "cbbd"', output: '"bb"' }],
+    code: { cpp: 'class Solution {\npublic:\n  string longestPalindrome(string s) {\n    int n = s.size(), start = 0, mx = 1;\n    auto expand = [&](int l, int r) {\n      while (l >= 0 && r < n && s[l] == s[r]) { l--; r++; }\n      return r - l - 1;\n    };\n    for (int i = 0; i < n; i++) {\n      int odd = expand(i, i), even = expand(i, i+1);\n      int len = max(odd, even);\n      if (len > mx) { mx = len; start = i - (len-1)/2; }\n    }\n    return s.substr(start, mx);\n  }\n};',
+            java: 'class Solution {\n  public String longestPalindrome(String s) {\n    int n = s.length(), start = 0, mx = 1;\n    for (int i = 0; i < n; i++) {\n      int o = expand(s,i,i), e = expand(s,i,i+1);\n      int len = Math.max(o, e);\n      if (len > mx) { mx = len; start = i-(len-1)/2; }\n    }\n    return s.substring(start, start+mx);\n  }\n  int expand(String s, int l, int r) {\n    while (l>=0 && r<s.length() && s.charAt(l)==s.charAt(r)){l--;r++;}\n    return r-l-1;\n  }\n}',
+            python: 'class Solution:\n  def longestPalindrome(self, s):\n    n, start, mx = len(s), 0, 1\n    def expand(l, r):\n      while l>=0 and r<n and s[l]==s[r]: l-=1; r+=1\n      return r-l-1\n    for i in range(n):\n      o = expand(i,i); e = expand(i,i+1)\n      ln = max(o, e)\n      if ln > mx: mx = ln; start = i-(ln-1)//2\n    return s[start:start+mx]',
+            javascript: 'function longestPalindrome(s) {\n  const n = s.length;\n  let start = 0, mx = 1;\n  const expand = (l,r) => { while (l>=0 && r<n && s[l]===s[r]) {l--;r++;} return r-l-1; };\n  for (let i = 0; i < n; i++) {\n    const o = expand(i,i), e = expand(i,i+1);\n    const len = Math.max(o,e);\n    if (len > mx) { mx = len; start = i-Math.floor((len-1)/2); }\n  }\n  return s.substring(start, start+mx);\n}' }
+  },
+  { id: 11, title: 'Container With Most Water', slug: 'container-water', diff: 'medium', accept: 55.1,
+    tags: ['Array', 'Two Pointers', 'Greedy'],
+    desc: `You are given an integer array <strong>height</strong> of length n. There are n vertical lines drawn such that the two endpoints of the i-th line are (i, 0) and (i, height[i]).\n\nFind two lines that together with the x-axis form a container, such that the container contains the most water.\n\nReturn the maximum amount of water a container can store.`,
+    ex: [{ input: 'height = [1,8,6,2,5,4,8,3,7]', output: '49' }, { input: 'height = [1,1]', output: '1' }],
+    code: { cpp: 'class Solution {\npublic:\n  int maxArea(vector<int>& height) {\n    int l = 0, r = height.size()-1, ans = 0;\n    while (l < r) {\n      ans = max(ans, (r-l)*min(height[l],height[r]));\n      if (height[l] < height[r]) l++; else r--;\n    }\n    return ans;\n  }\n};',
+            java: 'class Solution {\n  public int maxArea(int[] h) {\n    int l=0, r=h.length-1, ans=0;\n    while(l<r){ans=Math.max(ans,(r-l)*Math.min(h[l],h[r]));if(h[l]<h[r])l++;else r--;}\n    return ans;\n  }\n}',
+            python: 'class Solution:\n  def maxArea(self, h):\n    l,r,ans = 0, len(h)-1, 0\n    while l<r:\n      ans = max(ans, (r-l)*min(h[l],h[r]))\n      if h[l]<h[r]: l+=1\n      else: r-=1\n    return ans',
+            javascript: 'function maxArea(h) {\n  let l=0, r=h.length-1, ans=0;\n  while(l<r){ans=Math.max(ans,(r-l)*Math.min(h[l],h[r]));h[l]<h[r]?l++:r--;}\n  return ans;\n}' }
+  },
+  { id: 15, title: '3Sum', slug: 'three-sum', diff: 'medium', accept: 35.4,
+    tags: ['Array', 'Two Pointers', 'Sorting'],
+    desc: `Given an integer array <strong>nums</strong>, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, and j != k, and nums[i] + nums[j] + nums[k] == 0.\n\nNotice that the solution set must not contain duplicate triplets.`,
+    ex: [{ input: 'nums = [-1,0,1,2,-1,-4]', output: '[[-1,-1,2],[-1,0,1]]' }, { input: 'nums = [0,1,1]', output: '[]' }],
+    code: { cpp: 'class Solution {\npublic:\n  vector<vector<int>> threeSum(vector<int>& nums) {\n    sort(nums.begin(), nums.end());\n    vector<vector<int>> ans;\n    for (int i = 0; i+2 < nums.size(); i++) {\n      if (i>0 && nums[i]==nums[i-1]) continue;\n      int l=i+1, r=nums.size()-1, t=-nums[i];\n      while (l<r) {\n        int s=nums[l]+nums[r];\n        if (s==t) { ans.push_back({nums[i],nums[l],nums[r]}); l++;r--;\n          while(l<r&&nums[l]==nums[l-1])l++; }\n        else if (s<t) l++; else r--;\n      }\n    }\n    return ans;\n  }\n};',
+            java: 'class Solution {\n  public List<List<Integer>> threeSum(int[] nums) {\n    Arrays.sort(nums);\n    List<List<Integer>> ans = new ArrayList<>();\n    for(int i=0;i+2<nums.length;i++){\n      if(i>0&&nums[i]==nums[i-1])continue;\n      int l=i+1,r=nums.length-1,t=-nums[i];\n      while(l<r){int s=nums[l]+nums[r];if(s==t){ans.add(Arrays.asList(nums[i],nums[l],nums[r]));l++;r--;while(l<r&&nums[l]==nums[l-1])l++;}else if(s<t)l++;else r--;}\n    }\n    return ans;\n  }\n}',
+            python: 'class Solution:\n  def threeSum(self, nums):\n    nums.sort()\n    ans = []\n    for i in range(len(nums)-2):\n      if i>0 and nums[i]==nums[i-1]: continue\n      l,r,t = i+1, len(nums)-1, -nums[i]\n      while l<r:\n        s = nums[l]+nums[r]\n        if s==t: ans.append([nums[i],nums[l],nums[r]]); l+=1; r-=1\n          while l<r and nums[l]==nums[l-1]: l+=1\n        elif s<t: l+=1\n        else: r-=1\n    return ans',
+            javascript: 'function threeSum(nums) {\n  nums.sort((a,b)=>a-b);\n  const ans=[];\n  for(let i=0;i+2<nums.length;i++){\n    if(i>0&&nums[i]===nums[i-1])continue;\n    let l=i+1,r=nums.length-1,t=-nums[i];\n    while(l<r){const s=nums[l]+nums[r];if(s===t){ans.push([nums[i],nums[l],nums[r]]);l++;r--;while(l<r&&nums[l]===nums[l-1])l++;}else if(s<t)l++;else r--;}\n  }\n  return ans;\n}' }
+  },
+  { id: 20, title: 'Valid Parentheses', slug: 'valid-parentheses', diff: 'easy', accept: 40.8,
+    tags: ['String', 'Stack'],
+    desc: `Given a string <strong>s</strong> containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.\n\nAn input string is valid if:\n1. Open brackets must be closed by the same type of brackets.\n2. Open brackets must be closed in the correct order.\n3. Every close bracket has a corresponding open bracket of the same type.`,
+    ex: [{ input: 's = "()"', output: 'true' }, { input: 's = "()[]{}"', output: 'true' }, { input: 's = "(]"', output: 'false' }],
+    code: { cpp: 'class Solution {\npublic:\n  bool isValid(string s) {\n    stack<char> st;\n    for (char c : s) {\n      if (c==\'(\'||c==\'[\'||c==\'{\') st.push(c);\n      else {\n        if (st.empty()) return false;\n        char t = st.top(); st.pop();\n        if ((c==\')\'&&t!=\'(\')||(c==\']\'&&t!=\'[\')||(c==\'}\'&&t!=\'{\')) return false;\n      }\n    }\n    return st.empty();\n  }\n};',
+            java: 'class Solution {\n  public boolean isValid(String s) {\n    Stack<Character> st = new Stack<>();\n    for(char c:s.toCharArray()){\n      if(c==\'(\'||c==\'[\'||c==\'{\')st.push(c);\n      else{if(st.isEmpty())return false;char t=st.pop();if((c==\')\'&&t!=\'(\')||(c==\']\'&&t!=\'[\')||(c==\'}\'&&t!=\'{\'))return false;}\n    }\n    return st.isEmpty();\n  }\n}',
+            python: 'class Solution:\n  def isValid(self, s):\n    st = []\n    m = {\')\':\'(\', \']\':\'[\', \'}\':\'{\'}\n    for c in s:\n      if c in m:\n        if not st or st.pop()!=m[c]: return False\n      else: st.append(c)\n    return not st',
+            javascript: 'function isValid(s) {\n  const st=[], m={\')\':\'(\',\']\':\'[\',\'}\':\'{\'};\n  for(const c of s){if(c in m){if(!st.length||st.pop()!==m[c])return false;}else st.push(c);}\n  return !st.length;\n}' }
+  },
+  { id: 21, title: 'Merge Two Sorted Lists', slug: 'merge-two-lists', diff: 'easy', accept: 64.5,
+    tags: ['Linked List', 'Recursion'],
+    desc: `You are given the heads of two sorted linked lists <strong>list1</strong> and <strong>list2</strong>.\n\nMerge the two lists into one sorted list. The list should be made by splicing together the nodes of the first two lists.\n\nReturn the head of the merged linked list.`,
+    ex: [{ input: 'list1 = [1,2,4], list2 = [1,3,4]', output: '[1,1,2,3,4,4]' }, { input: 'list1 = [], list2 = [0]', output: '[0]' }],
+    code: { cpp: 'class Solution {\npublic:\n  ListNode* mergeTwoLists(ListNode* a, ListNode* b) {\n    if (!a) return b; if (!b) return a;\n    if (a->val < b->val) { a->next = mergeTwoLists(a->next,b); return a; }\n    else { b->next = mergeTwoLists(a,b->next); return b; }\n  }\n};',
+            java: 'class Solution {\n  public ListNode mergeTwoLists(ListNode a, ListNode b) {\n    if(a==null)return b; if(b==null)return a;\n    if(a.val<b.val){a.next=mergeTwoLists(a.next,b);return a;}\n    else{b.next=mergeTwoLists(a,b.next);return b;}\n  }\n}',
+            python: 'class Solution:\n  def mergeTwoLists(self, a, b):\n    if not a: return b\n    if not b: return a\n    if a.val < b.val: a.next=self.mergeTwoLists(a.next,b); return a\n    else: b.next=self.mergeTwoLists(a,b.next); return b',
+            javascript: 'function mergeTwoLists(a, b) {\n  if (!a) return b; if (!b) return a;\n  if (a.val<b.val){a.next=mergeTwoLists(a.next,b);return a;}\n  else{b.next=mergeTwoLists(a,b.next);return b;}\n}' }
+  },
+  { id: 22, title: 'Generate Parentheses', slug: 'generate-parentheses', diff: 'medium', accept: 75.1,
+    tags: ['String', 'Backtracking', 'DP'],
+    desc: `Given <strong>n</strong> pairs of parentheses, write a function to generate all combinations of well-formed parentheses.`,
+    ex: [{ input: 'n = 3', output: '["((()))","(()())","(())()","()(())","()()()"]' }, { input: 'n = 1', output: '["()"]' }],
+    code: { cpp: 'class Solution {\npublic:\n  vector<string> generateParenthesis(int n) {\n    vector<string> ans;\n    function<void(string,int,int)> dfs=[&](string s,int l,int r){\n      if(l==n&&r==n){ans.push_back(s);return;}\n      if(l<n)dfs(s+\'(\',l+1,r);\n      if(r<l)dfs(s+\')\',l,r+1);\n    };\n    dfs("",0,0);\n    return ans;\n  }\n};',
+            java: 'class Solution {\n  public List<String> generateParenthesis(int n) {List<String>a=new ArrayList<>();dfs(a,"",n,0,0);return a;}\n  void dfs(List<String>a,String s,int n,int l,int r){if(l==n&&r==n){a.add(s);return;}if(l<n)dfs(a,s+\'(\',n,l+1,r);if(r<l)dfs(a,s+\')\',n,l,r+1);}\n}',
+            python: 'class Solution:\n  def generateParenthesis(self, n):\n    ans=[]\n    def dfs(s,l,r):\n      if l==n and r==n: ans.append(s); return\n      if l<n: dfs(s+\'(\',l+1,r)\n      if r<l: dfs(s+\')\',l,r+1)\n    dfs("",0,0)\n    return ans',
+            javascript: 'function generateParenthesis(n){const ans=[];const dfs=(s,l,r)=>{if(l===n&&r===n)ans.push(s);if(l<n)dfs(s+\'(\',l+1,r);if(r<l)dfs(s+\')\',l,r+1);};dfs(\'\',0,0);return ans;}' }
+  },
+  { id: 23, title: 'Merge k Sorted Lists', slug: 'merge-k-lists', diff: 'hard', accept: 52.4,
+    tags: ['Linked List', 'Divide & Conquer', 'Heap'],
+    desc: `You are given an array of <strong>k</strong> linked-lists <strong>lists</strong>, each linked-list is sorted in ascending order.\n\nMerge all the linked-lists into one sorted linked-list and return it.`,
+    ex: [{ input: 'lists = [[1,4,5],[1,3,4],[2,6]]', output: '[1,1,2,3,4,4,5,6]' }, { input: 'lists = []', output: '[]' }],
+    code: { cpp: 'class Solution {\npublic:\n  ListNode* mergeKLists(vector<ListNode*>& lists) {\n    auto cmp = [](ListNode* a, ListNode* b){ return a->val > b->val; };\n    priority_queue<ListNode*, vector<ListNode*>, decltype(cmp)> pq(cmp);\n    for (auto& l: lists) if (l) pq.push(l);\n    ListNode dummy(0), *cur = &dummy;\n    while (!pq.empty()) {\n      auto node = pq.top(); pq.pop();\n      cur->next = node; cur = cur->next;\n      if (node->next) pq.push(node->next);\n    }\n    return dummy.next;\n  }\n};',
+            java: 'class Solution {\n  public ListNode mergeKLists(ListNode[] lists) {\n    var pq = new PriorityQueue<ListNode>((a,b)->a.val-b.val);\n    for(var l:lists)if(l!=null)pq.offer(l);\n    ListNode d=new ListNode(0),cur=d;\n    while(!pq.isEmpty()){var n=pq.poll();cur.next=n;cur=cur.next;if(n.next!=null)pq.offer(n.next);}\n    return d.next;\n  }\n}',
+            python: 'class Solution:\n  def mergeKLists(self, lists):\n    import heapq\n    h = [(l.val,i,l) for i,l in enumerate(lists) if l]\n    heapq.heapify(h)\n    dummy = cur = ListNode(0)\n    while h:\n      v,i,n = heapq.heappop(h)\n      cur.next = n; cur=cur.next\n      if n.next: heapq.heappush(h,(n.next.val,i,n.next))\n    return dummy.next',
+            javascript: 'function mergeKLists(lists){const pq=new MinPriorityQueue({priority:n=>n.val});lists.forEach(l=>l&&pq.enqueue(l));const d=new ListNode(0);let cur=d;while(!pq.isEmpty()){const n=pq.dequeue().element;cur.next=n;cur=cur.next;if(n.next)pq.enqueue(n.next);}return d.next;}' }
+  },
+  { id: 33, title: 'Search in Rotated Sorted Array', slug: 'search-rotated', diff: 'medium', accept: 41.3,
+    tags: ['Array', 'Binary Search'],
+    desc: `There is an integer array <strong>nums</strong> sorted in ascending order (with distinct values).\n\nPrior to being passed to your function, nums is possibly rotated at an unknown pivot index k (1 <= k < nums.length) such that the resulting array is [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]] (0-indexed).\n\nGiven the array nums after the possible rotation and an integer target, return the index of target if it is in nums, or -1 if it is not in nums.\n\nYou must write an algorithm with O(log n) runtime complexity.`,
+    ex: [{ input: 'nums = [4,5,6,7,0,1,2], target = 0', output: '4' }, { input: 'nums = [1], target = 0', output: '-1' }],
+    code: { cpp: 'class Solution {\npublic:\n  int search(vector<int>& nums, int target) {\n    int l = 0, r = nums.size() - 1;\n    while (l <= r) {\n      int mid = (l + r) / 2;\n      if (nums[mid] == target) return mid;\n      if (nums[l] <= nums[mid]) {\n        if (nums[l] <= target && target < nums[mid]) r = mid-1; else l = mid+1;\n      } else {\n        if (nums[mid] < target && target <= nums[r]) l = mid+1; else r = mid-1;\n      }\n    }\n    return -1;\n  }\n};',
+            java: 'class Solution {\n  public int search(int[] nums, int t) {\n    int l=0,r=nums.length-1;\n    while(l<=r){int m=(l+r)/2;if(nums[m]==t)return m;\n    if(nums[l]<=nums[m]){if(nums[l]<=t&&t<nums[m])r=m-1;else l=m+1;}\n    else{if(nums[m]<t&&t<=nums[r])l=m+1;else r=m-1;}}\n    return -1;\n  }\n}',
+            python: 'class Solution:\n  def search(self, nums, t):\n    l,r=0,len(nums)-1\n    while l<=r:\n      m=(l+r)//2\n      if nums[m]==t: return m\n      if nums[l]<=nums[m]:\n        if nums[l]<=t<nums[m]: r=m-1\n        else: l=m+1\n      else:\n        if nums[m]<t<=nums[r]: l=m+1\n        else: r=m-1\n    return -1',
+            javascript: 'function search(nums,t){let l=0,r=nums.length-1;while(l<=r){const m=Math.floor((l+r)/2);if(nums[m]===t)return m;if(nums[l]<=nums[m]){if(nums[l]<=t&&t<nums[m])r=m-1;else l=m+1;}else{if(nums[m]<t&&t<=nums[r])l=m+1;else r=m-1;}}return -1;}' }
+  },
+  { id: 42, title: 'Trapping Rain Water', slug: 'trapping-rain', diff: 'hard', accept: 62.8,
+    tags: ['Array', 'Two Pointers', 'Stack', 'DP'],
+    desc: `Given <strong>n</strong> non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.`,
+    ex: [{ input: 'height = [0,1,0,2,1,0,1,3,2,1,2,1]', output: '6' }, { input: 'height = [4,2,0,3,2,5]', output: '9' }],
+    code: { cpp: 'class Solution {\npublic:\n  int trap(vector<int>& h) {\n    int l=0,r=h.size()-1,lMax=0,rMax=0,ans=0;\n    while(l<r){\n      if(h[l]<h[r]){h[l]>=lMax?lMax=h[l]:ans+=lMax-h[l];l++;}\n      else{h[r]>=rMax?rMax=h[r]:ans+=rMax-h[r];r--;}\n    }\n    return ans;\n  }\n};',
+            java: 'class Solution {\n  public int trap(int[] h) {int l=0,r=h.length-1,lM=0,rM=0,a=0;while(l<r){if(h[l]<h[r]){if(h[l]>=lM)lM=h[l];else a+=lM-h[l];l++;}else{if(h[r]>=rM)rM=h[r];else a+=rM-h[r];r--;}}return a;}\n}',
+            python: 'class Solution:\n  def trap(self, h):\n    l,r,lM,rM,a=0,len(h)-1,0,0,0\n    while l<r:\n      if h[l]<h[r]:\n        if h[l]>=lM: lM=h[l]\n        else: a+=lM-h[l]\n        l+=1\n      else:\n        if h[r]>=rM: rM=h[r]\n        else: a+=rM-h[r]\n        r-=1\n    return a',
+            javascript: 'function trap(h){let l=0,r=h.length-1,lM=0,rM=0,a=0;while(l<r){if(h[l]<h[r]){h[l]>=lM?lM=h[l]:a+=lM-h[l];l++;}else{h[r]>=rM?rM=h[r]:a+=rM-h[r];r--;}}return a;}' }
+  },
+  { id: 46, title: 'Permutations', slug: 'permutations', diff: 'medium', accept: 79.0,
+    tags: ['Array', 'Backtracking'],
+    desc: `Given an array <strong>nums</strong> of distinct integers, return all the possible permutations. You can return the answer in any order.`,
+    ex: [{ input: 'nums = [1,2,3]', output: '[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]' }, { input: 'nums = [0,1]', output: '[[0,1],[1,0]]' }],
+    code: { cpp: 'class Solution {\npublic:\n  vector<vector<int>> permute(vector<int>& nums) {\n    vector<vector<int>> ans;\n    function<void(int)> dfs=[&](int i){\n      if(i==nums.size()){ans.push_back(nums);return;}\n      for(int j=i;j<nums.size();j++){swap(nums[i],nums[j]);dfs(i+1);swap(nums[i],nums[j]);}\n    };\n    dfs(0);return ans;\n  }\n};',
+            java: 'class Solution {public List<List<Integer>> permute(int[] n){List<List<Integer>>a=new ArrayList<>();dfs(a,new boolean[n.length],new ArrayList<>(),n);return a;}void dfs(List<List<Integer>>a,boolean[]v,List<Integer>p,int[]n){if(p.size()==n.length){a.add(new ArrayList<>(p));return;}for(int i=0;i<n.length;i++){if(v[i])continue;v[i]=true;p.add(n[i]);dfs(a,v,p,n);p.remove(p.size()-1);v[i]=false;}}}',
+            python: 'class Solution:\n  def permute(self, nums):\n    ans=[]\n    def dfs(i):\n      if i==len(nums): ans.append(nums[:]); return\n      for j in range(i,len(nums)): nums[i],nums[j]=nums[j],nums[i]; dfs(i+1); nums[i],nums[j]=nums[j],nums[i]\n    dfs(0)\n    return ans',
+            javascript: 'function permute(nums){const ans=[];const dfs=(i)=>{if(i===nums.length){ans.push([...nums]);return;}for(let j=i;j<nums.length;j++){[nums[i],nums[j]]=[nums[j],nums[i]];dfs(i+1);[nums[i],nums[j]]=[nums[j],nums[i]];}};dfs(0);return ans;}' }
+  },
+  { id: 53, title: 'Maximum Subarray', slug: 'maximum-subarray', diff: 'medium', accept: 51.3,
+    tags: ['Array', 'Divide & Conquer', 'DP'],
+    desc: `Given an integer array <strong>nums</strong>, find the subarray with the largest sum, and return its sum.`,
+    ex: [{ input: 'nums = [-2,1,-3,4,-1,2,1,-5,4]', output: '6' }, { input: 'nums = [1]', output: '1' }],
+    code: { cpp: 'class Solution {\npublic:\n  int maxSubArray(vector<int>& nums) {\n    int cur=nums[0], ans=nums[0];\n    for(int i=1;i<nums.size();i++){cur=max(nums[i],cur+nums[i]);ans=max(ans,cur);}\n    return ans;\n  }\n};',
+            java: 'class Solution{public int maxSubArray(int[] n){int c=n[0],a=n[0];for(int i=1;i<n.length;i++){c=Math.max(n[i],c+n[i]);a=Math.max(a,c);}return a;}}',
+            python: 'class Solution:\n  def maxSubArray(self, nums):\n    cur=ans=nums[0]\n    for x in nums[1:]: cur=max(x,cur+x); ans=max(ans,cur)\n    return ans',
+            javascript: 'function maxSubArray(nums){let cur=nums[0],ans=nums[0];for(let i=1;i<nums.length;i++){cur=Math.max(nums[i],cur+nums[i]);ans=Math.max(ans,cur);}return ans;}' }
+  },
+  { id: 56, title: 'Merge Intervals', slug: 'merge-intervals', diff: 'medium', accept: 47.9,
+    tags: ['Array', 'Sorting'],
+    desc: `Given an array of <strong>intervals</strong> where intervals[i] = [start<sub>i</sub>, end<sub>i</sub>], merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.`,
+    ex: [{ input: 'intervals = [[1,3],[2,6],[8,10],[15,18]]', output: '[[1,6],[8,10],[15,18]]' }, { input: 'intervals = [[1,4],[4,5]]', output: '[[1,5]]' }],
+    code: { cpp: 'class Solution {\npublic:\n  vector<vector<int>> merge(vector<vector<int>>& iv) {\n    sort(iv.begin(),iv.end());\n    vector<vector<int>> ans;\n    for(auto& i:iv){if(ans.empty()||ans.back()[1]<i[0])ans.push_back(i);else ans.back()[1]=max(ans.back()[1],i[1]);}\n    return ans;\n  }\n};',
+            java: 'class Solution{public int[][] merge(int[][] iv){Arrays.sort(iv,(a,b)->a[0]-b[0]);List<int[]>a=new ArrayList<>();for(int[] i:iv){if(a.isEmpty()||a.get(a.size()-1)[1]<i[0])a.add(i);else a.get(a.size()-1)[1]=Math.max(a.get(a.size()-1)[1],i[1]);}return a.toArray(new int[a.size()][]);}}',
+            python: 'class Solution:\n  def merge(self, iv):\n    iv.sort()\n    ans=[]\n    for i in iv:\n      if not ans or ans[-1][1]<i[0]: ans.append(i)\n      else: ans[-1][1]=max(ans[-1][1],i[1])\n    return ans',
+            javascript: 'function merge(iv){iv.sort((a,b)=>a[0]-b[0]);const ans=[];for(const i of iv){if(!ans.length||ans[ans.length-1][1]<i[0])ans.push(i);else ans[ans.length-1][1]=Math.max(ans[ans.length-1][1],i[1]);}return ans;}' }
+  },
+  { id: 121, title: 'Best Time to Buy and Sell Stock', slug: 'buy-sell-stock', diff: 'easy', accept: 54.2,
+    tags: ['Array', 'DP'],
+    desc: `You are given an array <strong>prices</strong> where prices[i] is the price of a given stock on the i-th day.\n\nYou want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell that stock.\n\nReturn the maximum profit you can achieve from this transaction. If you cannot achieve any profit, return 0.`,
+    ex: [{ input: 'prices = [7,1,5,3,6,4]', output: '5' }, { input: 'prices = [7,6,4,3,1]', output: '0' }],
+    code: { cpp: 'class Solution {\npublic:\n  int maxProfit(vector<int>& p) {\n    int mn=INT_MAX, ans=0;\n    for(int x:p){mn=min(mn,x);ans=max(ans,x-mn);}\n    return ans;\n  }\n};',
+            java: 'class Solution{public int maxProfit(int[] p){int mn=Integer.MAX_VALUE,a=0;for(int x:p){mn=Math.min(mn,x);a=Math.max(a,x-mn);}return a;}}',
+            python: 'class Solution:\n  def maxProfit(self, p):\n    mn,ans = float("inf"),0\n    for x in p: mn=min(mn,x); ans=max(ans,x-mn)\n    return ans',
+            javascript: 'function maxProfit(p){let mn=Infinity,ans=0;for(const x of p){mn=Math.min(mn,x);ans=Math.max(ans,x-mn);}return ans;}' }
+  },
+  { id: 156, title: 'Binary Tree Upside Down', slug: 'binary-tree-upside-down', diff: 'medium', accept: 59.8,
+    tags: ['Tree', 'DFS', 'Binary Tree'],
+    desc: `Given the root of a binary tree, where all the right nodes are either leaf nodes with a sibling (a left node that shares the same parent node) or empty, flip it upside down and turn it into a tree where the original right nodes turned into left leaf nodes. Return the new root.\n\n<strong>Explanation:</strong>\nGiven a binary tree {1,2,3,4,5}:\n<pre>    1\n   / \\\n  2   3\n / \\\n4   5</pre>\n\nAfter flipping:\n<pre>    4\n   / \\\n  5   2\n     / \\\n    3   1</pre>\n\nThe leftmost child (4) becomes the new root. Its parent (2) becomes its right child. The right sibling (5) becomes its left child. This transformation propagates upward recursively.\n\n<strong>Constraints:</strong>\n- The number of nodes in the tree is in the range [0, 10].\n- The right child of any node is either null or a leaf node.\n- Each right node has a sibling (a left node).`,
+    ex: [
+      { input: 'root = [1,2,3,4,5]', output: '[4,5,2,null,null,3,1]' },
+      { input: 'root = []', output: '[]' },
+      { input: 'root = [1]', output: '[1]' }
+    ],
+    code: {
+      cpp: '/**\n * Definition for a binary tree node.\n * struct TreeNode {\n *   int val;\n *   TreeNode *left;\n *   TreeNode *right;\n *   TreeNode() : val(0), left(nullptr), right(nullptr) {}\n *   TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n *   TreeNode(int x, TreeNode *l, TreeNode *r) : val(x), left(l), right(r) {}\n * };\n */\nclass Solution {\npublic:\n  TreeNode* upsideDownBinaryTree(TreeNode* root) {\n    if (!root || !root->left) return root;\n    TreeNode* newRoot = upsideDownBinaryTree(root->left);\n    root->left->left = root->right;\n    root->left->right = root;\n    root->left = nullptr;\n    root->right = nullptr;\n    return newRoot;\n  }\n};',
+      java: '/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *   int val;\n *   TreeNode left;\n *   TreeNode right;\n *   TreeNode() {}\n *   TreeNode(int val) { this.val = val; }\n *   TreeNode(int val, TreeNode left, TreeNode right) {\n *     this.val = val;\n *     this.left = left;\n *     this.right = right;\n *   }\n * }\n */\nclass Solution {\n  public TreeNode upsideDownBinaryTree(TreeNode root) {\n    if (root == null || root.left == null) return root;\n    TreeNode newRoot = upsideDownBinaryTree(root.left);\n    root.left.left = root.right;\n    root.left.right = root;\n    root.left = null;\n    root.right = null;\n    return newRoot;\n  }\n}',
+      python: '# Definition for a binary tree node.\n# class TreeNode:\n#   def __init__(self, val=0, left=None, right=None):\n#     self.val = val\n#     self.left = left\n#     self.right = right\nclass Solution:\n  def upsideDownBinaryTree(self, root):\n    if not root or not root.left:\n      return root\n    new_root = self.upsideDownBinaryTree(root.left)\n    root.left.left = root.right\n    root.left.right = root\n    root.left = None\n    root.right = None\n    return new_root',
+      javascript: '/**\n * Definition for a binary tree node.\n * function TreeNode(val, left, right) {\n *   this.val = (val===undefined ? 0 : val)\n *   this.left = (left===undefined ? null : left)\n *   this.right = (right===undefined ? null : right)\n * }\n */\nfunction upsideDownBinaryTree(root) {\n  if (!root || !root.left) return root;\n  const newRoot = upsideDownBinaryTree(root.left);\n  root.left.left = root.right;\n  root.left.right = root;\n  root.left = null;\n  root.right = null;\n  return newRoot;\n}'
+    }
+  }
+];
+
+// ═══════════════════════ STATE ═══════════════════════
+const PER_PAGE = 9;
+let currentPage = 1;
+let currentLang = 'cpp';
+let filtered = problems;
+
+// ═══════════════════════ RENDER PROBLEM LIST ═══════════════════════
+function renderProblems(probs, page) {
+  const totalPages = Math.ceil(probs.length / PER_PAGE);
+  const start = (page - 1) * PER_PAGE;
+  const slice = probs.slice(start, start + PER_PAGE);
+
+  const list = document.getElementById('problemList');
+  list.innerHTML = slice.map(p => `
+    <div class="problem-row" onclick="openDetail(${p.id})">
+      <span class="problem-num">#${p.id}</span>
+      <span class="problem-title">${p.title}<span>${p.tags[0]}</span></span>
+      <span class="difficulty ${p.diff}">${p.diff.toUpperCase()}</span>
+      <span class="acceptance">${p.accept}%</span>
+    </div>
+  `).join('');
+
+  // Pagination dots
+  const pag = document.getElementById('pagination');
+  let dots = '';
+  for (let i = 1; i <= totalPages && i <= 3; i++) {
+    dots += `<div class="page-dot ${i === page ? 'active' : ''}" onclick="goPage(${i})"></div>`;
+  }
+  if (totalPages > 3) {
+    dots += `<span style="color:var(--text-muted);font-size:0.7rem">...</span>`;
+    dots += `<div class="page-dot" onclick="goPage(${totalPages})"></div>`;
+  }
+  pag.innerHTML = dots;
+}
+
+function goPage(p) { currentPage = p; renderProblems(filtered, currentPage); }
+
+// ═══════════════════════ SEARCH ═══════════════════════
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  const q = e.target.value.toLowerCase().trim();
+  filtered = q ? problems.filter(p =>
+    p.title.toLowerCase().includes(q) ||
+    p.id.toString() === q ||
+    p.tags.some(t => t.toLowerCase().includes(q))
+  ) : problems;
+  currentPage = 1;
+  renderProblems(filtered, currentPage);
+});
+
+// ═══════════════════════ NAVIGATION ═══════════════════════
+function openDetail(id) {
+  const p = problems.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('detailView').style.display = 'flex';
+  document.getElementById('detailView').classList.add('detail-view');
+  document.getElementById('detailView').style.display = 'flex';
+  document.getElementById('detailNumber').textContent = '#' + p.id;
+  document.getElementById('detailDifficulty').textContent = p.diff.toUpperCase();
+  document.getElementById('detailDifficulty').className = 'difficulty ' + p.diff;
+
+  // Description panel
+  document.getElementById('descPanel').innerHTML = `
+    <div class="desc-title">${p.title}</div>
+    <div class="desc-badges">${p.tags.map(t => `<span class="tag-badge">${t}</span>`).join('')}</div>
+    <div class="desc-section"><p>${p.desc.replace(/\n/g, '<br>')}</p></div>
+    ${p.ex.map((e, i) => `
+      <div class="example-block">
+        <div class="ex-label">Example ${i+1}:</div>
+        <pre>Input: ${e.input}<br>Output: ${e.output}</pre>
+      </div>
+    `).join('')}
+    ${p.constraints ? `<div class="desc-section"><h3>Constraints</h3><p>${p.constraints}</p></div>` : ''}
+  `;
+
+  // Code panel
+  currentLang = 'cpp';
+  document.querySelectorAll('.lang-pill').forEach(el => el.classList.remove('active'));
+  document.querySelector('[data-lang="cpp"]').classList.add('active');
+  renderCode(p.code.cpp, 'cpp');
+  document.getElementById('outputPanel').classList.remove('show');
+}
+
+function goHome() {
+  document.getElementById('homeView').style.display = 'flex';
+  document.getElementById('detailView').style.display = 'none';
+  renderProblems(filtered, currentPage);
+}
+
+// ═══════════════════════ LANGUAGE SWITCH ═══════════════════════
+function switchLang(el) {
+  document.querySelectorAll('.lang-pill').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  currentLang = el.dataset.lang;
+  const p = getCurrentProblem();
+  if (p) renderCode(p.code[currentLang], currentLang);
+}
+
+function getCurrentProblem() {
+  const numText = document.getElementById('detailNumber').textContent;
+  const id = parseInt(numText.replace('#', ''));
+  return problems.find(p => p.id === id);
+}
+
+function renderCode(code, lang) {
+  // Simple syntax-aware rendering
+  const el = document.getElementById('codeBody');
+  let html = syntaxHighlight(code, lang);
+  html += '<span class="glowing-cursor"></span>';
+  el.innerHTML = html;
+}
+
+function syntaxHighlight(code, lang) {
+  // Very basic keyword-based highlighting
+  const keywords = new Set([
+    'class','public','private','protected','return','if','else','for','while',
+    'do','switch','case','break','continue','new','delete','try','catch',
+    'const','static','virtual','override','final','null','nullptr','true','false',
+    'this','super','void','int','long','float','double','bool','char','auto',
+    'var','let','const','function','def','self','import','from','class','return',
+    'vector','string','map','set','unordered_map','List','ArrayList','Map','HashMap',
+    'Stack','Queue','PriorityQueue','Arrays','Math','Integer','TreeNode','ListNode',
+    'Solution','struct','enum','typedef','template','typename','using','namespace',
+    'None','True','False','print','range','len','enumerate','divmod','if','elif',
+    'else','for','while','def','lambda','yield','async','await','extends','implements',
+    'interface','package','public','private','protected','static','void','int','String',
+    'boolean','char','float','double','long','byte','short','new','return','this',
+    'super','null','true','false','instanceof','import','class','enum','finally',
+    'throw','throws','try','catch','final','abstract','synchronized','volatile',
+  ]);
+
+  let lines = code.split('\n');
+  let html = '';
+  for (let line of lines) {
+    let escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Comments
+    if (escaped.includes('//') || escaped.includes('#')) {
+      let cStart = escaped.indexOf('//') !== -1 ? escaped.indexOf('//') : (escaped.indexOf('#') !== -1 ? escaped.indexOf('#') : -1);
+      if (cStart !== -1) {
+        escaped = escaped.substring(0, cStart) + '<span class="code-comment">' + escaped.substring(cStart) + '</span>';
+      }
+    }
+
+    // Strings
+    escaped = escaped.replace(/(\'.*?\')/g, '<span class="code-string">$1</span>');
+    escaped = escaped.replace(/(".*?")/g, '<span class="code-string">$1</span>');
+
+    // Numbers
+    escaped = escaped.replace(/\b(\d+\.?\d*)\b/g, '<span class="code-number">$1</span>');
+
+    // Keywords
+    for (let kw of keywords) {
+      let re = new RegExp('\\b(' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\b', 'g');
+      // Only replace if not inside a span
+      escaped = escaped.replace(re, (match, p1, offset) => {
+        // Check if not inside a tag
+        let before = escaped.substring(0, offset);
+        let openTags = (before.match(/<span/g) || []).length;
+        let closeTags = (before.match(/<\/span>/g) || []).length;
+        if (openTags === closeTags) return '<span class="code-keyword">' + p1 + '</span>';
+        return match;
+      });
+    }
+
+    // function calls (word followed by opening paren)
+    escaped = escaped.replace(/\b([a-zA-Z_]\w*)(?=\s*\()/g, (match, p1, offset) => {
+      let before = escaped.substring(0, offset);
+      let openTags = (before.match(/<span/g) || []).length;
+      let closeTags = (before.match(/<\/span>/g) || []).length;
+      if (openTags === closeTags) return '<span class="code-func">' + p1 + '</span>';
+      return match;
+    });
+
+    html += escaped + '\n';
+  }
+  return html;
+}
+
+// ═══════════════════════ RUN / SUBMIT ═══════════════════════
+function runCode() {
+  const out = document.getElementById('outputPanel');
+  out.style.display = 'block';
+  out.classList.add('show');
+  out.innerHTML = `
+    <div class="output-success">✔ 编译通过</div>
+    <div class="output-success">✔ 测试用例 1/1 通过</div>
+    <div>━━━━━━━━━━━━━━━━━</div>
+    <div>Input:  root = [1,2,3,4,5]</div>
+    <div>Output: [4,5,2,null,null,3,1]</div>
+    <div>Expected: [4,5,2,null,null,3,1]</div>
+    <div style="color:var(--teal);margin-top:0.5rem">Runtime: 0ms | Memory: 7.8MB</div>
+  `;
+}
+
+function submitCode() {
+  const out = document.getElementById('outputPanel');
+  out.style.display = 'block';
+  out.classList.add('show');
+  out.innerHTML = `
+    <div class="output-success">✔ 提交成功</div>
+    <div style="color:var(--teal);">Runtime: 0ms (beats 100%) | Memory: 7.8MB (beats 95.3%)</div>
+  `;
+}
+
+// ═══════════════════════ INIT ═══════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderProblems(problems, 1);
+
+  // Handle Back button / back navigation
+  window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.view === 'detail') {
+      const id = e.state.id;
+      openDetail(id);
+    } else {
+      goHome();
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>枯山水 — 编程道场</title>
+<style>
+/* ============================================
+   CSS Reset & Base
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sand-warm: #e8e0d5;
+  --sand-light: #ede6dc;
+  --sand-dark: #ddd5c5;
+  --sand-shadow: #d4cbbb;
+  --stone-charcoal: #3a3a3a;
+  --stone-dark: #2a2a2a;
+  --stone-light: #4a4a4a;
+  --moss: #5a7a4a;
+  --moss-light: #6d8f5c;
+  --gold: #c9a84c;
+  --gold-light: #dbb95e;
+  --maple: #c44;
+  --maple-light: #d55;
+  --ink: #1a1a1a;
+  --ink-light: #3a3a3a;
+  --parchment: #faf6ed;
+  --parchment-dark: #f0ead8;
+  --text-muted: #8a8078;
+  --transition-zen: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-breathe: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Georgia', 'Noto Serif SC', 'SimSun', 'STSong', serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--sand-warm);
+  color: var(--ink);
+  user-select: none;
+  cursor: default;
+}
+
+/* ============================================
+   Zen Garden Container
+   ============================================ */
+.zen-garden {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    /* Subtle sand grain noise */
+    repeating-conic-gradient(
+      rgba(0,0,0,0.008) 0% 0.003%,
+      transparent 0.003% 0.006%
+    ),
+    /* Base sand gradient */
+    linear-gradient(
+      175deg,
+      #ede6dc 0%,
+      #e8e0d5 15%,
+      #e3dbce 30%,
+      #ddd5c5 50%,
+      #e0d8c8 70%,
+      #e8e0d5 85%,
+      #ede6dc 100%
+    );
+}
+
+/* ============================================
+   Sand Ripple Patterns (CSS Art)
+   ============================================ */
+.ripple-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ripple group 1 — upper left */
+.ripple-layer::before {
+  content: '';
+  position: absolute;
+  top: 18%; left: 22%;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 18px,
+    rgba(180,170,155,0.12) 18px,
+    rgba(180,170,155,0.12) 19px,
+    transparent 19px,
+    transparent 37px,
+    rgba(180,170,155,0.08) 37px,
+    rgba(180,170,155,0.08) 38px,
+    transparent 38px,
+    transparent 56px,
+    rgba(180,170,155,0.05) 56px,
+    rgba(180,170,155,0.05) 57px,
+    transparent 57px,
+    transparent 78px,
+    rgba(180,170,155,0.03) 78px,
+    rgba(180,170,155,0.03) 79px
+  );
+  transform: translate(-50%, -50%);
+  opacity: 0.7;
+}
+
+/* Ripple group 2 — center-right */
+.ripple-layer::after {
+  content: '';
+  position: absolute;
+  top: 55%; left: 72%;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 22px,
+    rgba(180,170,155,0.1) 22px,
+    rgba(180,170,155,0.1) 23px,
+    transparent 23px,
+    transparent 44px,
+    rgba(180,170,155,0.07) 44px,
+    rgba(180,170,155,0.07) 45px,
+    transparent 45px,
+    transparent 67px,
+    rgba(180,170,155,0.04) 67px,
+    rgba(180,170,155,0.04) 68px,
+    transparent 68px,
+    transparent 92px,
+    rgba(180,170,155,0.02) 92px,
+    rgba(180,170,155,0.02) 93px
+  );
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+}
+
+/* Ripple group 3 — lower center */
+.ripple-layer-2 {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ripple-layer-2::before {
+  content: '';
+  position: absolute;
+  top: 75%; left: 38%;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 15px,
+    rgba(180,170,155,0.09) 15px,
+    rgba(180,170,155,0.09) 16px,
+    transparent 16px,
+    transparent 31px,
+    rgba(180,170,155,0.06) 31px,
+    rgba(180,170,155,0.06) 32px,
+    transparent 32px,
+    transparent 48px,
+    rgba(180,170,155,0.03) 48px,
+    rgba(180,170,155,0.03) 49px
+  );
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+}
+
+/* Ripple group 4 — right side accent */
+.ripple-layer-2::after {
+  content: '';
+  position: absolute;
+  top: 30%; left: 85%;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 12px,
+    rgba(180,170,155,0.1) 12px,
+    rgba(180,170,155,0.1) 13px,
+    transparent 13px,
+    transparent 25px,
+    rgba(180,170,155,0.06) 25px,
+    rgba(180,170,155,0.06) 26px,
+    transparent 26px,
+    transparent 39px,
+    rgba(180,170,155,0.03) 39px,
+    rgba(180,170,155,0.03) 40px
+  );
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+}
+
+/* ============================================
+   En Logo (円)
+   ============================================ */
+.en-logo {
+  position: absolute;
+  top: 32px;
+  left: 40px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.5s var(--transition-zen);
+  background: rgba(232,224,213,0.5);
+  backdrop-filter: blur(4px);
+}
+
+.en-logo span {
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 20px;
+  color: var(--ink);
+  line-height: 1;
+  transition: transform 0.5s var(--transition-zen);
+}
+
+.en-logo:hover {
+  background: rgba(232,224,213,0.8);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  transform: scale(1.05);
+}
+
+.en-logo:hover span {
+  transform: rotate(15deg);
+}
+
+/* ============================================
+   Search Zone
+   ============================================ */
+.search-zone {
+  position: absolute;
+  top: 36px;
+  right: 40px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(58,58,58,0.08);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s var(--transition-zen);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.search-toggle:hover {
+  background: rgba(58,58,58,0.15);
+  transform: scale(1.1);
+}
+
+.search-input-wrap {
+  overflow: hidden;
+  width: 0;
+  opacity: 0;
+  transition: width 0.5s var(--transition-zen), opacity 0.3s ease;
+}
+
+.search-input-wrap.active {
+  width: 200px;
+  opacity: 1;
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 4px 0;
+  outline: none;
+  width: 200px;
+  letter-spacing: 0.5px;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Brush-stroke underline effect */
+.search-input:focus {
+  border-bottom-color: var(--ink);
+  border-bottom-width: 2px;
+}
+
+/* ============================================
+   Difficulty Pebbles
+   ============================================ */
+.difficulty-pebbles {
+  position: absolute;
+  top: 90px;
+  right: 40px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pebble {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.4s var(--transition-breathe);
+  position: relative;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.pebble::after {
+  content: attr(data-label);
+  position: absolute;
+  right: 38px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.pebble:hover::after {
+  opacity: 1;
+}
+
+.pebble.easy {
+  background: linear-gradient(135deg, #6d8f5c, #5a7a4a);
+}
+
+.pebble.medium {
+  background: linear-gradient(135deg, #dbb95e, #c9a84c);
+}
+
+.pebble.hard {
+  background: linear-gradient(135deg, #d55, #c44);
+}
+
+.pebble:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pebble.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(58,58,58,0.2), 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pebble.all-pebble {
+  background: linear-gradient(135deg, #7a7a7a, #5a5a5a);
+  margin-bottom: 6px;
+}
+
+/* ============================================
+   Stats Calligraphy Corner
+   ============================================ */
+.stats-corner {
+  position: absolute;
+  bottom: 40px;
+  left: 40px;
+  z-index: 5;
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  color: var(--text-muted);
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.stats-corner:hover {
+  opacity: 0.8;
+}
+
+.stats-line {
+  font-size: 14px;
+  line-height: 1.8;
+  letter-spacing: 2px;
+  text-shadow: 0 0 1px rgba(0,0,0,0.05);
+}
+
+.stats-line.main {
+  font-size: 18px;
+  color: var(--ink-light);
+}
+
+/* ============================================
+   Stones Container (Problem Cards)
+   ============================================ */
+.stones-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.stone {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  background: var(--stone-charcoal);
+  color: #e8e0d5;
+  border-radius: 43% 38% 44% 39% / 41% 43% 38% 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 12px;
+  box-shadow:
+    4px 6px 12px rgba(0,0,0,0.12),
+    1px 2px 4px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: all 0.5s var(--transition-breathe);
+  will-change: transform, box-shadow;
+}
+
+/* Stone size variants */
+.stone.sm { width: 120px; height: 100px; }
+.stone.md { width: 148px; height: 126px; }
+.stone.lg { width: 172px; height: 150px; }
+
+/* Stone hover — lift and deeper shadow */
+.stone:hover {
+  transform: translateY(-10px) rotate(0deg) !important;
+  box-shadow:
+    8px 14px 24px rgba(0,0,0,0.18),
+    2px 4px 8px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  z-index: 20;
+}
+
+/* Stone rotation variants */
+.stone.rot-l { transform: rotate(-3deg); }
+.stone.rot-r { transform: rotate(2.5deg); }
+.stone.rot-l2 { transform: rotate(-5deg); }
+.stone.rot-r2 { transform: rotate(4deg); }
+.stone.rot-m { transform: rotate(-1deg); }
+
+/* Stone difficulty accent */
+.stone::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.stone.diff-easy::before { background: var(--moss); right: 12px; }
+.stone.diff-medium::before { background: var(--gold); right: 12px; }
+.stone.diff-hard::before { background: var(--maple); right: 12px; }
+
+/* Stone content */
+.stone-number {
+  font-family: 'Georgia', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  opacity: 0.5;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.stone-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+}
+
+/* Stone subtle float animation */
+@keyframes stone-float {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-3px) rotate(var(--rot, 0deg)); }
+}
+
+.stone.floating {
+  animation: stone-float 6s ease-in-out infinite;
+}
+
+/* ============================================
+   Detail Overlay
+   ============================================ */
+.detail-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(30,28,24,0.3);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--transition-zen);
+}
+
+.detail-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================
+   Detail Panel — Scroll unfurling from right
+   ============================================ */
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 520px;
+  max-width: 90vw;
+  height: 100vh;
+  z-index: 60;
+  background: var(--parchment);
+  background-image:
+    /* Subtle paper fiber texture */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139,119,90,0.02) 2px,
+      rgba(139,119,90,0.02) 3px
+    ),
+    /* Paper aging gradient */
+    radial-gradient(
+      ellipse at 30% 20%,
+      #fdfaf2 0%,
+      #faf6ed 40%,
+      #f5f0e0 100%
+    );
+  box-shadow:
+    -8px 0 40px rgba(0,0,0,0.15),
+    -2px 0 8px rgba(0,0,0,0.08);
+  transform: translateX(110%);
+  transition: transform 0.6s var(--transition-zen);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.detail-panel.active {
+  transform: translateX(0);
+}
+
+/* Scroll unfurling cloth edge */
+.detail-panel::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(139,119,90,0.15),
+    transparent
+  );
+}
+
+.detail-inner {
+  padding: 48px 40px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Close button */
+.detail-close {
+  align-self: flex-end;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+  font-family: serif;
+}
+
+.detail-close:hover {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.3);
+  color: var(--ink);
+  transform: rotate(90deg);
+}
+
+/* Problem header */
+.detail-difficulty {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-family: 'Georgia', serif;
+  margin-bottom: 12px;
+}
+
+.detail-difficulty.easy {
+  background: rgba(90,122,74,0.1);
+  color: var(--moss);
+}
+
+.detail-difficulty.medium {
+  background: rgba(201,168,76,0.12);
+  color: #a08030;
+}
+
+.detail-difficulty.hard {
+  background: rgba(204,68,68,0.1);
+  color: var(--maple);
+}
+
+.detail-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 28px;
+  font-weight: normal;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.detail-id {
+  font-family: 'Georgia', serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  margin-bottom: 32px;
+}
+
+/* Description */
+.detail-desc {
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 15px;
+  line-height: 2;
+  color: #3a3530;
+  margin-bottom: 32px;
+  letter-spacing: 0.5px;
+}
+
+/* Ink Stone Code Block */
+.detail-code {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  font-family: 'Consolas', 'Courier New', 'Source Code Pro', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #c8c0b8;
+  overflow-x: auto;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 1px 2px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+/* Subtle ink stone highlight */
+.detail-code::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255,255,255,0.04),
+    transparent
+  );
+  border-radius: 8px 8px 0 0;
+}
+
+/* ============================================
+   River Stone Buttons
+   ============================================ */
+.detail-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.btn-stone {
+  padding: 10px 28px;
+  border-radius: 30px;
+  border: none;
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 14px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.4s var(--transition-zen);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.btn-stone.primary {
+  background: var(--stone-charcoal);
+  color: #e8e0d5;
+}
+
+.btn-stone.primary:hover {
+  background: var(--ink);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.btn-stone.secondary {
+  background: transparent;
+  color: var(--ink-light);
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.btn-stone.secondary:hover {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.35);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   Subtle ambient glow on hovered empty space
+   ============================================ */
+.zen-garden::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  background: radial-gradient(
+    ellipse at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255,255,240,0.06) 0%,
+    transparent 60%
+  );
+}
+
+.zen-garden:hover::after {
+  opacity: 1;
+}
+
+/* ============================================
+   Notification Toast
+   ============================================ */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 100;
+  background: var(--stone-charcoal);
+  color: #e8e0d5;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s var(--transition-zen);
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .stones-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .stone {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    margin: 12px auto;
+    transform: rotate(0deg) !important;
+  }
+
+  .stone.sm, .stone.md, .stone.lg {
+    width: 140px;
+    height: 110px;
+  }
+
+  .detail-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .detail-inner {
+    padding: 32px 24px;
+  }
+
+  .en-logo {
+    top: 20px;
+    left: 20px;
+  }
+
+  .search-zone {
+    top: 24px;
+    right: 20px;
+  }
+
+  .difficulty-pebbles {
+    top: 70px;
+    right: 20px;
+  }
+
+  .stats-corner {
+    display: none;
+  }
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+.detail-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.detail-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detail-panel::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+
+/* ============================================
+   Stone glow pulse (subtle, for visual interest)
+   ============================================ */
+@keyframes stone-pulse {
+  0%, 100% { box-shadow: 4px 6px 12px rgba(0,0,0,0.12), 1px 2px 4px rgba(0,0,0,0.08); }
+  50% { box-shadow: 4px 8px 16px rgba(0,0,0,0.15), 1px 3px 6px rgba(0,0,0,0.1); }
+}
+
+/* ============================================
+   Enter animation for stones
+   ============================================ */
+@keyframes stone-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9) rotate(var(--rot, 0deg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--rot, 0deg));
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Zen Garden -->
+<div class="zen-garden" id="garden">
+  <!-- Sand ripple layers -->
+  <div class="ripple-layer"></div>
+  <div class="ripple-layer-2"></div>
+
+  <!-- En Logo -->
+  <div class="en-logo" title="枯山水 · 编程道场">
+    <span>円</span>
+  </div>
+
+  <!-- Search Zone -->
+  <div class="search-zone">
+    <div class="search-input-wrap" id="searchWrap">
+      <input
+        type="text"
+        class="search-input"
+        id="searchInput"
+        placeholder="寻石…"
+        autocomplete="off"
+      >
+    </div>
+    <button class="search-toggle" id="searchToggle" title="寻石">
+      &#9906;
+    </button>
+  </div>
+
+  <!-- Difficulty Pebbles -->
+  <div class="difficulty-pebbles">
+    <button class="pebble all-pebble active" data-diff="all" data-label="万象" title="全部"></button>
+    <button class="pebble easy" data-diff="easy" data-label="初禅" title="初禅"></button>
+    <button class="pebble medium" data-diff="medium" data-label="二禅" title="二禅"></button>
+    <button class="pebble hard" data-diff="hard" data-label="三禅" title="三禅"></button>
+  </div>
+
+  <!-- Stats Calligraphy -->
+  <div class="stats-corner" id="stats">
+    <div class="stats-line main">参禅 <span id="statTotal">15</span> 题</div>
+    <div class="stats-line">
+      初禅 <span id="statEasy">6</span> · 二禅 <span id="statMedium">6</span> · 三禅 <span id="statHard">3</span>
+    </div>
+  </div>
+
+  <!-- Stones (Problem Cards) -->
+  <div class="stones-container" id="stonesContainer">
+    <!-- Dynamically rendered by JS -->
+  </div>
+</div>
+
+<!-- Detail Overlay -->
+<div class="detail-overlay" id="detailOverlay"></div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-inner">
+    <button class="detail-close" id="detailClose">&times;</button>
+    <span class="detail-difficulty" id="detailDifficulty"></span>
+    <h2 class="detail-title" id="detailTitle"></h2>
+    <div class="detail-id" id="detailId"></div>
+    <div class="detail-desc" id="detailDesc"></div>
+    <div class="detail-code" id="detailCode"></div>
+    <div class="detail-actions">
+      <button class="btn-stone primary" id="btnTry">参禅</button>
+      <button class="btn-stone secondary" id="btnClose">归去</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   Problem Data — The Stones of the Garden
+   ============================================ */
+const problems = [
+  {
+    id: 1,
+    title: '两数之和',
+    difficulty: 'easy',
+    desc: '给定一个整数数组和一个目标值，请你在该数组中找出和为目标值的那两个整数，并返回它们的数组下标。\n\n你可以假设每种输入只会对应一个答案，且同样的元素不能被重复利用。\n\n如风过水面，波澜不惊。遍历数组，以哈希表记录已见之数，得解于一瞬。',
+    code: `function twoSum(nums, target) {\n  const seen = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (seen.has(complement)) {\n      return [seen.get(complement), i];\n    }\n    seen.set(nums[i], i);\n  }\n  return [];\n}`
+  },
+  {
+    id: 2,
+    title: '反转链表',
+    difficulty: 'easy',
+    desc: '反转一个单链表。\n\n如流水回溯，指针转向。以三指针法，前驱、当前、后继，步步为营，徐徐图之。',
+    code: `function reverseList(head) {\n  let prev = null;\n  let curr = head;\n  while (curr) {\n    const next = curr.next;\n    curr.next = prev;\n    prev = curr;\n    curr = next;\n  }\n  return prev;\n}`
+  },
+  {
+    id: 3,
+    title: '有效括号',
+    difficulty: 'easy',
+    desc: '给定一个只包含括号字符的字符串，判断字符串是否有效。\n\n有效需满足：左括号必须用相同类型的右括号闭合，且左括号必须以正确的顺序闭合。\n\n如禅定之心，开合有度。以栈模拟，遇左入栈，遇右出栈匹配。',
+    code: `function isValid(s) {\n  const stack = [];\n  const map = { ')': '(', '}': '{', ']': '[' };\n  for (const ch of s) {\n    if (!map[ch]) {\n      stack.push(ch);\n    } else if (stack.pop() !== map[ch]) {\n      return false;\n    }\n  }\n  return stack.length === 0;\n}`
+  },
+  {
+    id: 4,
+    title: '最大子数组和',
+    difficulty: 'medium',
+    desc: '给定一个整数数组，找到一个具有最大和的连续子数组，返回其最大和。\n\n如浪涛拍岸，起落不息。Kadane算法：以当前和与全局最优博弈，取舍之间见智慧。',
+    code: `function maxSubArray(nums) {\n  let maxSum = nums[0];\n  let currSum = nums[0];\n  for (let i = 1; i < nums.length; i++) {\n    currSum = Math.max(nums[i], currSum + nums[i]);\n    maxSum = Math.max(maxSum, currSum);\n  }\n  return maxSum;\n}`
+  },
+  {
+    id: 5,
+    title: '层序遍历二叉树',
+    difficulty: 'medium',
+    desc: '给定一个二叉树，返回其按层序遍历得到的节点值。即逐层地，从左到右访问所有节点。\n\n如年轮扩展，层层递进。以队列为器，广度优先，每层一清。',
+    code: `function levelOrder(root) {\n  if (!root) return [];\n  const result = [];\n  const queue = [root];\n  while (queue.length) {\n    const level = [];\n    const size = queue.length;\n    for (let i = 0; i < size; i++) {\n      const node = queue.shift();\n      level.push(node.val);\n      if (node.left) queue.push(node.left);\n      if (node.right) queue.push(node.right);\n    }\n    result.push(level);\n  }\n  return result;\n}`
+  },
+  {
+    id: 6,
+    title: '最长回文子串',
+    difficulty: 'medium',
+    desc: '给定一个字符串，找到其中最长的回文子串。\n\n如镜中倒影，左右对称。中心扩展法：以每个字符（或字符间隙）为中心，向两侧延展，取最长者。',
+    code: `function longestPalindrome(s) {\n  let longest = '';\n  for (let i = 0; i < s.length; i++) {\n    const odd = expand(s, i, i);\n    const even = expand(s, i, i + 1);\n    const longer = odd.length > even.length ? odd : even;\n    if (longer.length > longest.length) longest = longer;\n  }\n  return longest;\n}\n\nfunction expand(s, l, r) {\n  while (l >= 0 && r < s.length && s[l] === s[r]) {\n    l--; r++;\n  }\n  return s.slice(l + 1, r);\n}`
+  },
+  {
+    id: 7,
+    title: '合并K个升序链表',
+    difficulty: 'hard',
+    desc: '给你一个链表数组，每个链表都已经按升序排列。将所有链表合并到一个升序链表中，返回合并后的链表。\n\n如百川归海，万流同宗。以最小堆优先队列为载体，取各表之最小，渐进归并。',
+    code: `function mergeKLists(lists) {\n  if (!lists.length) return null;\n  while (lists.length > 1) {\n    const merged = [];\n    for (let i = 0; i < lists.length; i += 2) {\n      const l1 = lists[i];\n      const l2 = lists[i + 1] || null;\n      merged.push(mergeTwo(l1, l2));\n    }\n    lists = merged;\n  }\n  return lists[0];\n}\n\nfunction mergeTwo(l1, l2) {\n  const dummy = { next: null };\n  let tail = dummy;\n  while (l1 && l2) {\n    if (l1.val < l2.val) {\n      tail.next = l1; l1 = l1.next;\n    } else {\n      tail.next = l2; l2 = l2.next;\n    }\n    tail = tail.next;\n  }\n  tail.next = l1 || l2;\n  return dummy.next;\n}`
+  },
+  {
+    id: 8,
+    title: '中位数之寻',
+    difficulty: 'hard',
+    desc: '给定两个大小分别为 m 和 n 的正序数组，找出这两个正序数组的中位数。要求时间复杂度为 O(log(m+n))。\n\n如天平两端，取中衡之。以二分法切割数组，确保左半皆小于右半。',
+    code: `function findMedianSortedArrays(nums1, nums2) {\n  if (nums1.length > nums2.length) {\n    [nums1, nums2] = [nums2, nums1];\n  }\n  const m = nums1.length, n = nums2.length;\n  let lo = 0, hi = m;\n  while (lo <= hi) {\n    const i = Math.floor((lo + hi) / 2);\n    const j = Math.floor((m + n + 1) / 2) - i;\n    const maxL = Math.max(\n      i > 0 ? nums1[i-1] : -Infinity,\n      j > 0 ? nums2[j-1] : -Infinity\n    );\n    const minR = Math.min(\n      i < m ? nums1[i] : Infinity,\n      j < n ? nums2[j] : Infinity\n    );\n    if (maxL <= minR) {\n      return (m + n) % 2 === 0\n        ? (maxL + minR) / 2\n        : maxL;\n    }\n    if (i > 0 && nums1[i-1] > nums2[j]) hi = i - 1;\n    else lo = i + 1;\n  }\n}`
+  },
+  {
+    id: 9,
+    title: '接雨水',
+    difficulty: 'hard',
+    desc: '给定 n 个非负整数表示每个宽度为 1 的柱子的高度图，计算按此排列的柱子，下雨之后能接多少雨水。\n\n如山谷蓄泉，左顾右盼。双指针法：左右各立一指针，以两侧最大值之小者为准绳，累加水位差。',
+    code: `function trap(height) {\n  let left = 0, right = height.length - 1;\n  let leftMax = 0, rightMax = 0;\n  let water = 0;\n  while (left < right) {\n    if (height[left] < height[right]) {\n      leftMax = Math.max(leftMax, height[left]);\n      water += leftMax - height[left];\n      left++;\n    } else {\n      rightMax = Math.max(rightMax, height[right]);\n      water += rightMax - height[right];\n      right--;\n    }\n  }\n  return water;\n}`
+  },
+  {
+    id: 10,
+    title: '岛屿数量',
+    difficulty: 'medium',
+    desc: '给定一个由 1（陆地）和 0（水）组成的二维网格，计算网格中岛屿的数量。岛屿总是被水包围，由相邻的陆地水平或垂直连接而成。\n\n如海上群岛，散布四方。深度优先搜索，遇陆地则沉之，并探其四邻。',
+    code: `function numIslands(grid) {\n  if (!grid.length) return 0;\n  let count = 0;\n  const rows = grid.length, cols = grid[0].length;\n\n  function dfs(r, c) {\n    if (r < 0 || r >= rows || c < 0 || c >= cols) return;\n    if (grid[r][c] !== '1') return;\n    grid[r][c] = '0';\n    dfs(r + 1, c); dfs(r - 1, c);\n    dfs(r, c + 1); dfs(r, c - 1);\n  }\n\n  for (let r = 0; r < rows; r++) {\n    for (let c = 0; c < cols; c++) {\n      if (grid[r][c] === '1') {\n        count++;\n        dfs(r, c);\n      }\n    }\n  }\n  return count;\n}`
+  },
+  {
+    id: 11,
+    title: '爬楼梯',
+    difficulty: 'easy',
+    desc: '假设你正在爬楼梯。需要 n 阶你才能到达楼顶。每次你可以爬 1 或 2 个台阶。你有多少种不同的方法可以爬到楼顶？\n\n如登塔拾级，步步为营。斐波那契数列，动态规划之始。',
+    code: `function climbStairs(n) {\n  if (n <= 2) return n;\n  let prev2 = 1, prev1 = 2;\n  for (let i = 3; i <= n; i++) {\n    const curr = prev1 + prev2;\n    prev2 = prev1;\n    prev1 = curr;\n  }\n  return prev1;\n}`
+  },
+  {
+    id: 12,
+    title: '全排列',
+    difficulty: 'medium',
+    desc: '给定一个没有重复数字的序列，返回其所有可能的全排列。\n\n如万花筒转，诸象纷呈。回溯法：以递归穷举，每层择一未用之数，穷尽则回溯。',
+    code: `function permute(nums) {\n  const result = [];\n  function backtrack(path, used) {\n    if (path.length === nums.length) {\n      result.push([...path]);\n      return;\n    }\n    for (let i = 0; i < nums.length; i++) {\n      if (used[i]) continue;\n      used[i] = true;\n      path.push(nums[i]);\n      backtrack(path, used);\n      path.pop();\n      used[i] = false;\n    }\n  }\n  backtrack([], {});\n  return result;\n}`
+  },
+  {
+    id: 13,
+    title: '正则匹配',
+    difficulty: 'hard',
+    desc: '实现一个支持 . 和 * 的正则表达式匹配功能。\n\n. 匹配任意单个字符。\n* 匹配零个或多个前面的那一个元素。\n\n如棋局对弈，步步推演。动态规划：dp[i][j] 表示 s 前 i 个字符与 p 前 j 个字符是否匹配。',
+    code: `function isMatch(s, p) {\n  const dp = Array.from({ length: s.length + 1 },\n    () => Array(p.length + 1).fill(false));\n  dp[0][0] = true;\n  for (let j = 2; j <= p.length; j++) {\n    if (p[j - 1] === '*') dp[0][j] = dp[0][j - 2];\n  }\n  for (let i = 1; i <= s.length; i++) {\n    for (let j = 1; j <= p.length; j++) {\n      if (p[j - 1] !== '*') {\n        dp[i][j] = dp[i - 1][j - 1] &&\n          (s[i - 1] === p[j - 1] || p[j - 1] === '.');\n      } else {\n        dp[i][j] = dp[i][j - 2] || (\n          dp[i - 1][j] &&\n          (s[i - 1] === p[j - 2] || p[j - 2] === '.')\n        );\n      }\n    }\n  }\n  return dp[s.length][p.length];\n}`
+  },
+  {
+    id: 14,
+    title: '盛水之器',
+    difficulty: 'medium',
+    desc: '给定 n 个非负整数，每个数代表坐标中的一个点 (i, ai)。在坐标内画 n 条垂直线，找出其中的两条线，使得它们与 x 轴共同构成的容器可以容纳最多的水。\n\n如水满则溢，取短为界。双指针自两端向中收缩，取高度之小者，乘距离之远者。',
+    code: `function maxArea(height) {\n  let left = 0, right = height.length - 1;\n  let maxWater = 0;\n  while (left < right) {\n    const w = right - left;\n    const h = Math.min(height[left], height[right]);\n    maxWater = Math.max(maxWater, w * h);\n    if (height[left] < height[right]) left++;\n    else right--;\n  }\n  return maxWater;\n}`
+  },
+  {
+    id: 15,
+    title: '无重最长子串',
+    difficulty: 'medium',
+    desc: '给定一个字符串，请你找出其中不含有重复字符的最长子串的长度。\n\n如清泉流石，不染一尘。滑动窗口：以双指针维护无重复区间，遇重则缩左界。',
+    code: `function lengthOfLongestSubstring(s) {\n  const seen = new Map();\n  let maxLen = 0, left = 0;\n  for (let right = 0; right < s.length; right++) {\n    if (seen.has(s[right])) {\n      left = Math.max(left, seen.get(s[right]) + 1);\n    }\n    seen.set(s[right], right);\n    maxLen = Math.max(maxLen, right - left + 1);\n  }\n  return maxLen;\n}`
+  }
+];
+
+/* ============================================
+   Garden State
+   ============================================ */
+let activeDifficulty = 'all';
+let searchQuery = '';
+let currentProblem = null;
+
+/* ============================================
+   Stone Layout — Organic positions like a real
+   zen garden rock arrangement
+   ============================================ */
+const stoneLayouts = [
+  /* Row ~1 */ { col: 8,  row: 6,  size: 'md', rot: 'rot-l',  float: true  },
+  /* Row ~1 */ { col: 22, row: 5,  size: 'sm', rot: 'rot-r',  float: false },
+  /* Row ~2 */ { col: 5,  row: 20, size: 'sm', rot: 'rot-l2', float: true  },
+  /* Row ~2 */ { col: 18, row: 22, size: 'lg', rot: 'rot-r2', float: false },
+  /* Row ~2 */ { col: 30, row: 18, size: 'md', rot: 'rot-m',  float: true  },
+  /* Row ~3 */ { col: 12, row: 38, size: 'lg', rot: 'rot-r',  float: false },
+  /* Row ~3 */ { col: 42, row: 35, size: 'md', rot: 'rot-l',  float: true  },
+  /* Row ~3 */ { col: 62, row: 40, size: 'sm', rot: 'rot-l2', float: false },
+  /* Row ~4 */ { col: 3,  row: 55, size: 'md', rot: 'rot-r2', float: true  },
+  /* Row ~4 */ { col: 55, row: 56, size: 'lg', rot: 'rot-m',  float: false },
+  /* Row ~5 */ { col: 25, row: 72, size: 'sm', rot: 'rot-l',  float: true  },
+  /* Row ~5 */ { col: 48, row: 75, size: 'md', rot: 'rot-r',  float: false },
+  /* Row ~5 */ { col: 70, row: 70, size: 'sm', rot: 'rot-l2', float: true  },
+  /* Row ~6 */ { col: 35, row: 88, size: 'md', rot: 'rot-r2', float: false },
+  /* Row ~6 */ { col: 65, row: 87, size: 'sm', rot: 'rot-m',  float: true  },
+];
+
+/* ============================================
+   Render Stones
+   ============================================ */
+function renderStones() {
+  const container = document.getElementById('stonesContainer');
+  container.innerHTML = '';
+
+  const filtered = problems.filter(p => {
+    if (activeDifficulty !== 'all' && p.difficulty !== activeDifficulty) return false;
+    if (searchQuery && !p.title.includes(searchQuery) && !p.desc.includes(searchQuery)) return false;
+    return true;
+  });
+
+  filtered.forEach((problem, index) => {
+    const layout = stoneLayouts[index] || {
+      col: Math.random() * 70 + 5,
+      row: Math.random() * 80 + 5,
+      size: ['sm', 'md', 'lg'][Math.floor(Math.random() * 3)],
+      rot: ['rot-l', 'rot-r', 'rot-l2', 'rot-r2', 'rot-m'][Math.floor(Math.random() * 5)],
+      float: Math.random() > 0.5
+    };
+
+    const stone = document.createElement('div');
+    stone.className = `stone ${layout.size} ${layout.rot} diff-${problem.difficulty}`;
+    if (layout.float) stone.classList.add('floating');
+    stone.style.left = `${layout.col}%`;
+    stone.style.top = `${layout.row}%`;
+    stone.style.setProperty('--rot', stone.classList.contains('rot-l') ? '-3deg' :
+                                       stone.classList.contains('rot-r') ? '2.5deg' :
+                                       stone.classList.contains('rot-l2') ? '-5deg' :
+                                       stone.classList.contains('rot-r2') ? '4deg' : '-1deg');
+    stone.style.transform = `translate(-50%, -50%) rotate(var(--rot))`;
+    stone.style.animationDelay = `${index * 0.08}s`;
+
+    stone.innerHTML = `
+      <div class="stone-number">题 ${String(problem.id).padStart(2, '0')}</div>
+      <div class="stone-title">${problem.title}</div>
+    `;
+
+    stone.addEventListener('click', () => openDetail(problem));
+    container.appendChild(stone);
+  });
+
+  updateStats(filtered);
+}
+
+/* ============================================
+   Update Stats
+   ============================================ */
+function updateStats(filtered) {
+  const easy = filtered.filter(p => p.difficulty === 'easy').length;
+  const medium = filtered.filter(p => p.difficulty === 'medium').length;
+  const hard = filtered.filter(p => p.difficulty === 'hard').length;
+
+  document.getElementById('statTotal').textContent = filtered.length;
+  document.getElementById('statEasy').textContent = easy;
+  document.getElementById('statMedium').textContent = medium;
+  document.getElementById('statHard').textContent = hard;
+}
+
+/* ============================================
+   Open Detail Panel (Scroll unfurl)
+   ============================================ */
+function openDetail(problem) {
+  currentProblem = problem;
+  const panel = document.getElementById('detailPanel');
+  const overlay = document.getElementById('detailOverlay');
+
+  document.getElementById('detailDifficulty').textContent =
+    problem.difficulty === 'easy' ? '初禅' :
+    problem.difficulty === 'medium' ? '二禅' : '三禅';
+  document.getElementById('detailDifficulty').className =
+    `detail-difficulty ${problem.difficulty}`;
+
+  document.getElementById('detailTitle').textContent = problem.title;
+  document.getElementById('detailId').textContent = `题 ${String(problem.id).padStart(2, '0')}`;
+  document.getElementById('detailDesc').textContent = problem.desc;
+  document.getElementById('detailCode').textContent = problem.code;
+
+  panel.classList.add('active');
+  overlay.classList.add('active');
+  panel.scrollTop = 0;
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('active');
+  document.getElementById('detailOverlay').classList.remove('active');
+  currentProblem = null;
+}
+
+/* ============================================
+   Toast Notification
+   ============================================ */
+let toastTimer;
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+/* ============================================
+   Difficulty Filter
+   ============================================ */
+document.querySelectorAll('.pebble').forEach(pebble => {
+  pebble.addEventListener('click', () => {
+    document.querySelectorAll('.pebble').forEach(p => p.classList.remove('active'));
+    pebble.classList.add('active');
+    activeDifficulty = pebble.dataset.diff;
+    renderStones();
+    const label = pebble.dataset.label;
+    if (label) showToast(`${label}`);
+  });
+});
+
+/* ============================================
+   Search
+   ============================================ */
+const searchToggle = document.getElementById('searchToggle');
+const searchWrap = document.getElementById('searchWrap');
+const searchInput = document.getElementById('searchInput');
+
+searchToggle.addEventListener('click', () => {
+  const isActive = searchWrap.classList.contains('active');
+  if (isActive) {
+    searchWrap.classList.remove('active');
+    searchInput.value = '';
+    searchQuery = '';
+    renderStones();
+  } else {
+    searchWrap.classList.add('active');
+    setTimeout(() => searchInput.focus(), 100);
+  }
+});
+
+searchInput.addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim();
+  renderStones();
+});
+
+/* ============================================
+   Detail Panel Controls
+   ============================================ */
+document.getElementById('detailClose').addEventListener('click', closeDetail);
+document.getElementById('btnClose').addEventListener('click', closeDetail);
+document.getElementById('detailOverlay').addEventListener('click', closeDetail);
+
+document.getElementById('btnTry').addEventListener('click', () => {
+  if (currentProblem) {
+    showToast(`已入"${currentProblem.title}"之禅`);
+  }
+});
+
+/* ============================================
+   Keyboard Shortcuts
+   ============================================ */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('detailPanel').classList.contains('active')) {
+      closeDetail();
+    }
+    if (searchWrap.classList.contains('active')) {
+      searchWrap.classList.remove('active');
+      searchInput.value = '';
+      searchQuery = '';
+      renderStones();
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    searchToggle.click();
+  }
+});
+
+/* ============================================
+   Mouse tracking for ambient glow
+   ============================================ */
+document.getElementById('garden').addEventListener('mousemove', (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+  e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+});
+
+/* ============================================
+   Initialize
+   ============================================ */
+renderStones();
+
+/* Stone appearance stagger animation */
+setTimeout(() => {
+  document.querySelectorAll('.stone').forEach((stone, i) => {
+    stone.style.opacity = '0';
+    stone.style.animation = `stone-appear 0.6s ${i * 0.06}s var(--transition-breathe) forwards`;
+  });
+}, 200);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>刷题网站 — 创意风格</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#0a0a14;color:#e0e0e0;min-height:100vh;padding:40px 20px}
+h1{font-size:32px;font-weight:800;letter-spacing:-1px;margin-bottom:6px;text-align:center}
+.grad{background:linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#6a6a8a;font-size:15px;margin-bottom:12px;text-align:center}
+.tabs{display:flex;justify-content:center;gap:4px;margin-bottom:36px}
+.tab{padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;background:transparent;border:1px solid #252540;color:#787898;transition:all .2s;font-family:inherit}
+.tab:hover,.tab.active{background:#1d1d30;border-color:#4f46e5;color:#c8cee8}
+.section{display:none}
+.section.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;width:100%;margin:0 auto}
+.card{background:#12121e;border:1px solid #252540;border-radius:14px;overflow:hidden;cursor:pointer;transition:all .35s ease;text-decoration:none;color:inherit;display:block}
+.card:hover{transform:translateY(-6px);border-color:#4f46e5;box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.card-preview{width:100%;aspect-ratio:16/10;position:relative;overflow:hidden}
+.card:nth-child(1) .card-preview{background:#faf8f5}.card:nth-child(2) .card-preview{background:#0a0f0a}.card:nth-child(3) .card-preview{background:#0d0d1a}
+.card-preview iframe{width:300%;height:300%;border:none;transform:scale(.333);transform-origin:0 0;pointer-events:none}
+.card-body{padding:22px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.card:nth-child(1) .badge{background:rgba(255,107,107,.15);color:#ff6b6b}
+.card:nth-child(2) .badge{background:rgba(0,255,65,.15);color:#00ff41}
+.card:nth-child(3) .badge{background:rgba(168,85,247,.15);color:#a855f7}
+.card h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.card p{font-size:13px;color:#787898;line-height:1.6}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px}
+.tag{padding:3px 8px;background:rgba(255,255,255,.04);border-radius:5px;font-size:11px;color:#9898b8}
+@media(max-width:768px){.cards{grid-template-columns:1fr}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<h1><span class="grad">创意风格</span> — 刷题网站</h1>
+<p class="sub">突破常规的三套独特设计</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('next')">🚀 超创意</button>
+  <button class="tab" onclick="switchTab('creative')">🎨 创意</button>
+  <button class="tab" onclick="switchTab('classic')">📋 经典</button>
+</div>
+
+<div class="section active" id="sec-next">
+  <div class="cards">
+    <a class="card" href="creative-3d-galaxy.html" target="_blank">
+      <div class="card-preview" style="background:#000011"><iframe src="creative-3d-galaxy.html"></iframe></div>
+      <div class="card-body">
+        <span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8">THREE.JS</span>
+        <h2>🌌 3D星系探索</h2>
+        <p>Three.js 3D星空 · 题目是旋转星球 · 星座连线 · 拖拽探索</p>
+        <div class="tags"><span class="tag">3D</span><span class="tag">Galaxy</span><span class="tag">Three.js</span></div>
+      </div>
+    </a>
+    <a class="card" href="creative-zen.html" target="_blank">
+      <div class="card-preview" style="background:#e8e0d5"><iframe src="creative-zen.html"></iframe></div>
+      <div class="card-body">
+        <span class="badge" style="background:rgba(90,122,74,.15);color:#7aaa6a">ZEN</span>
+        <h2>🏯 禅意枯山水</h2>
+        <p>日式石庭美学 · 沙纹涟漪 · 石子题目 · 羊皮纸卷轴</p>
+        <div class="tags"><span class="tag">Zen</span><span class="tag">Japanese</span><span class="tag">Minimal</span></div>
+      </div>
+    </a>
+    <a class="card" href="creative-matrix.html" target="_blank">
+      <div class="card-preview" style="background:#000"><iframe src="creative-matrix.html"></iframe></div>
+      <div class="card-body">
+        <span class="badge" style="background:rgba(0,255,65,.15);color:#00ff41">MATRIX</span>
+        <h2>💚 数据矩阵雨</h2>
+        <p>Canvas 代码雨背景 · 绿色磷光 · 终端命令 · 数据窗口</p>
+        <div class="tags"><span class="tag">Canvas</span><span class="tag">Matrix</span><span class="tag">Cyber</span></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="section" id="sec-creative">
+  <div class="cards">
+    <a class="card" href="creative-magazine.html" target="_blank">
+      <div class="card-preview"><iframe src="creative-magazine.html"></iframe></div>
+      <div class="card-body">
+        <span class="badge">EDITORIAL</span>
+        <h2>📰 杂志排版风</h2>
+        <p>Playfair Display 标题字 · 非对称网格 · 印刷品质感 · 珊瑚色点缀</p>
+        <div class="tags"><span class="tag">Editorial</span><span class="tag">Typography</span><span class="tag">Print</span></div>
+      </div>
+    </a>
+    <a class="card" href="creative-terminal.html" target="_blank">
+      <div class="card-preview"><iframe src="creative-terminal.html"></iframe></div>
+      <div class="card-body">
+        <span class="badge">TERMINAL</span>
+        <h2>💻 黑客终端风</h2>
+        <p>CRT 扫描线 · ASCII 装饰 · man page 排版 · 终端命令交互</p>
+        <div class="tags"><span class="tag">Retro</span><span class="tag">ASCII</span><span class="tag">Hacker</span></div>
+      </div>
+    </a>
+    <a class="card" href="creative-organic.html" target="_blank">
+      <div class="card-preview"><iframe src="creative-organic.html"></iframe></div>
+      <div class="card-body">
+        <span class="badge">ORGANIC</span>
+        <h2>🫧 有机玻璃拟态</h2>
+        <p>动态渐变 blob · 毛玻璃卡片 · 极光色调 · 浮动粒子</p>
+        <div class="tags"><span class="tag">Glass</span><span class="tag">Aurora</span><span class="tag">Fluid</span></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="section" id="sec-classic">
+  <div class="cards">
+    <a class="card" href="style1-dark-ide.html" target="_blank">
+      <div class="card-preview" style="background:#1a1b26"></div>
+      <div class="card-body">
+        <span class="badge" style="background:rgba(59,130,246,.15);color:#60a5fa">CLASSIC</span>
+        <h2>🌙 现代暗色 IDE</h2>
+        <p>VS Code 风格 · 玻璃拟态 · 专业沉稳</p>
+        <div class="tags"><span class="tag">Dark</span><span class="tag">Glass</span></div>
+      </div>
+    </a>
+    <a class="card" href="style2-minimal-light.html" target="_blank">
+      <div class="card-preview" style="background:#fafbfc"></div>
+      <div class="card-body">
+        <span class="badge" style="background:rgba(5,150,105,.15);color:#34d399">CLASSIC</span>
+        <h2>☀️ 极简白底文档</h2>
+        <p>Notion/Apple 风格 · 大量留白</p>
+        <div class="tags"><span class="tag">Light</span><span class="tag">Minimal</span></div>
+      </div>
+    </a>
+    <a class="card" href="style3-neon-dark.html" target="_blank">
+      <div class="card-preview" style="background:#0a0a0f"></div>
+      <div class="card-body">
+        <span class="badge" style="background:rgba(236,72,153,.15);color:#f472b6">CLASSIC</span>
+        <h2>⚡ 赛博霓虹暗黑</h2>
+        <p>发光边框 · 动画网格 · 视觉冲击</p>
+        <div class="tags"><span class="tag">Neon</span><span class="tag">Bold</span></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<script>function switchTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById('sec-'+t).classList.add('active')}</script>
+</body>
+</html>
