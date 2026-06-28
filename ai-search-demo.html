@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 搜索演示 - 算法大陆</title>
+<style>
+:root {
+    --bg: #0a0a14;
+    --surface: #13132b;
+    --card: #1a1a3e;
+    --border: #2a2a4e;
+    --text: #e0e0f0;
+    --text-dim: #7a7aaa;
+    --accent: #7c5cff;
+    --accent-glow: #9d7fff;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --radius: 12px;
+    --radius-lg: 18px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(124,92,255,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(124,92,255,0.05) 0%, transparent 50%);
+}
+
+.container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+.header {
+    text-align: center; margin-bottom: 40px;
+}
+.header h1 {
+    font-size: 36px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-glow), #c4b5fd);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+.header .subtitle { color: var(--text-dim); font-size: 14px; }
+
+/* 搜索框 */
+.search-box {
+    position: relative; margin-bottom: 32px;
+}
+.search-input-wrap {
+    display: flex; gap: 12px;
+}
+.search-input {
+    flex: 1;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text);
+    font-size: 16px;
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(124,92,255,0.15);
+}
+.search-input::placeholder { color: var(--text-dim); }
+.search-btn {
+    padding: 16px 28px;
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
+    border: none; border-radius: var(--radius-lg);
+    color: white; font-size: 16px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.3s var(--ease);
+    font-family: var(--font-body);
+}
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(124,92,255,0.3);
+}
+.search-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* 快捷搜索标签 */
+.quick-searches {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 32px;
+}
+.quick-tag {
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    font-size: 13px; cursor: pointer;
+    transition: all 0.2s var(--ease);
+    font-family: var(--font-body);
+}
+.quick-tag:hover {
+    border-color: var(--accent);
+    color: var(--accent-glow);
+    background: rgba(124,92,255,0.1);
+}
+
+/* 筛选栏 */
+.filters {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap;
+}
+.filter-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.filter-btn {
+    padding: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-dim);
+    font-size: 12px; cursor: pointer;
+    transition: all 0.2s var(--ease);
+    font-family: var(--font-body);
+}
+.filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent-glow);
+    background: rgba(124,92,255,0.15);
+}
+.filter-btn:hover { color: var(--text); }
+
+/* 搜索结果 */
+.search-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.search-meta .query-text { color: var(--accent-glow); font-weight: 600; }
+.search-meta .count { color: var(--text-dim); font-size: 13px; }
+
+.result-card {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 18px 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s var(--ease);
+    position: relative; overflow: hidden;
+}
+.result-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--border);
+    transition: background 0.3s var(--ease);
+}
+.result-card:hover {
+    transform: translateX(4px);
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(124,92,255,0.1);
+}
+.result-card:hover::before { background: var(--accent); }
+
+.result-number {
+    min-width: 50px; text-align: right;
+    font-size: 11px; color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+}
+.result-content { flex: 1; }
+.result-title {
+    font-size: 16px; font-weight: 600; color: var(--text);
+    margin-bottom: 4px;
+}
+.result-id { font-size: 12px; color: var(--text-dim); }
+.result-tags {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
+}
+.tag {
+    padding: 2px 10px;
+    background: rgba(124,92,255,0.1);
+    border: 1px solid rgba(124,92,255,0.2);
+    border-radius: 12px;
+    font-size: 11px; color: var(--accent-glow);
+}
+.diff-badge {
+    padding: 2px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 600;
+}
+.diff-badge.Easy { background: rgba(74,222,128,0.1); color: var(--green); }
+.diff-badge.Medium { background: rgba(251,191,36,0.1); color: var(--amber); }
+.diff-badge.Hard { background: rgba(248,113,113,0.1); color: var(--red); }
+
+.relevance-bar {
+    width: 60px; height: 4px; background: var(--border); border-radius: 2px;
+    overflow: hidden; margin-top: 4px;
+}
+.relevance-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 0.5s var(--ease);
+}
+
+/* 加载/空状态 */
+.loading {
+    text-align: center; padding: 60px 20px; color: var(--text-dim);
+}
+.loading .spinner {
+    width: 40px; height: 40px; margin: 0 auto 16px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty {
+    text-align: center; padding: 60px 20px; color: var(--text-dim);
+}
+.empty .icon { font-size: 48px; margin-bottom: 12px; }
+.empty h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+
+.error-msg {
+    text-align: center; padding: 20px;
+    color: var(--red); font-size: 14px;
+    background: rgba(248,113,113,0.05);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: var(--radius);
+}
+
+/* 连接状态 */
+.connection-status {
+    position: fixed; top: 16px; right: 16px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 12px;
+}
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+.status-dot.online { background: var(--green); }
+.status-dot.offline { background: var(--red); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
+</head>
+<body>
+
+<div class="connection-status" id="connStatus">
+    <span class="status-dot offline" id="statusDot"></span>
+    <span id="statusText">未连接</span>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h1>AI 语义搜索</h1>
+        <p class="subtitle">用自然语言描述，让 AI 帮你找到最匹配的算法题</p>
+    </div>
+
+    <div class="search-box">
+        <div class="search-input-wrap">
+            <input
+                type="text" class="search-input"
+                id="searchInput"
+                placeholder='试试搜索: "适合初学者的动态规划入门题" 或 "类似跳跃游戏的贪心题目"...'
+                autofocus
+            >
+            <button class="search-btn" id="searchBtn" onclick="doSearch()">
+                🔍 搜索
+            </button>
+        </div>
+    </div>
+
+    <div class="quick-searches">
+        <span class="quick-tag" onclick="quickSearch('入门级的二分查找练习题')">🔰 入门二分查找</span>
+        <span class="quick-tag" onclick="quickSearch('什么是动态规划，有哪些经典题目')">📚 动态规划入门</span>
+        <span class="quick-tag" onclick="quickSearch('需要用到哈希表和双指针的题目')">🗂️ 哈希+双指针</span>
+        <span class="quick-tag" onclick="quickSearch('和图遍历、最短路径相关的困难题')">🗺️ 图论困难题</span>
+        <span class="quick-tag" onclick="quickSearch('链表反转、合并相关的面试高频题')">🔗 链表高频题</span>
+        <span class="quick-tag" onclick="quickSearch('适合初学者的模拟题和暴力解法')">🎮 新手模拟题</span>
+    </div>
+
+    <div class="filters">
+        <span class="filter-label">难度:</span>
+        <button class="filter-btn" data-diff="all" onclick="setDifficulty(null)">全部</button>
+        <button class="filter-btn" data-diff="Easy" onclick="setDifficulty('Easy')">简单</button>
+        <button class="filter-btn" data-diff="Medium" onclick="setDifficulty('Medium')">中等</button>
+        <button class="filter-btn" data-diff="Hard" onclick="setDifficulty('Hard')">困难</button>
+    </div>
+
+    <div id="results">
+        <div class="empty">
+            <div class="icon">🔮</div>
+            <h3>输入你想找的题目描述</h3>
+            <p>不用记题号，用自然语言描述就好</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Check backend connection
+async function checkConnection() {
+    try {
+        const res = await fetch('http://localhost:8000/api/health');
+        if (res.ok) {
+            document.getElementById('statusDot').className = 'status-dot online';
+            document.getElementById('statusText').textContent = '已连接';
+            document.getElementById('connStatus').style.display = 'flex';
+            return true;
+        }
+    } catch (e) {}
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent = '后端未启动';
+    return false;
+}
+
+let currentDifficulty = null;
+
+function setDifficulty(diff) {
+    currentDifficulty = diff;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    const active = document.querySelector(`[data-diff="${diff || 'all'}"]`);
+    if (active) active.classList.add('active');
+}
+
+async function quickSearch(q) {
+    document.getElementById('searchInput').value = q;
+    await doSearch();
+}
+
+async function doSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) return;
+
+    const resultsDiv = document.getElementById('results');
+    const btn = document.getElementById('searchBtn');
+
+    btn.disabled = true;
+    btn.textContent = '搜索中...';
+    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>AI 正在理解你的搜索意图...</p></div>';
+
+    try {
+        const res = await fetch('http://localhost:8000/api/problems/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query,
+                top_k: 15,
+                difficulty: currentDifficulty || undefined,
+            }),
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        renderResults(query, data);
+    } catch (e) {
+        resultsDiv.innerHTML = `<div class="error-msg">搜索失败: ${e.message}<br><small>请确保后端已启动并已导入数据</small></div>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 搜索';
+    }
+}
+
+function renderResults(query, data) {
+    const resultsDiv = document.getElementById('results');
+
+    if (!data.results || data.results.length === 0) {
+        resultsDiv.innerHTML = `<div class="empty">
+            <div class="icon">🔎</div>
+            <h3>没有找到匹配的题目</h3>
+            <p>试试换个描述方式？</p>
+        </div>`;
+        return;
+    }
+
+    let html = `<div class="search-meta">
+        <span>搜索: <span class="query-text">"${escapeHtml(query)}"</span></span>
+        <span class="count">${data.total} 个结果</span>
+    </div>`;
+
+    for (const r of data.results) {
+        const p = r.problem;
+        const relPercent = Math.round(r.relevance * 100);
+        const barColor = relPercent > 70 ? '#4ade80' : relPercent > 40 ? '#fbbf24' : '#f87171';
+
+        html += `<div class="result-card" onclick="viewProblem('${p.id}')">
+            <div class="result-number">#${p.number}</div>
+            <div class="result-content">
+                <div class="result-title">${escapeHtml(p.title_cn || p.title)}</div>
+                <div class="result-id">${escapeHtml(p.title)} · ${p.kingdom_emoji} ${p.kingdom}</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;">
+                    <span class="diff-badge ${p.difficulty}">${p.difficulty === 'Easy' ? '简单' : p.difficulty === 'Medium' ? '中等' : '困难'}</span>
+                    <span style="font-size:11px;color:var(--text-dim);">AC ${p.ac_rate}%</span>
+                    <div class="relevance-bar">
+                        <div class="relevance-fill" style="width:${relPercent}%;background:${barColor};"></div>
+                    </div>
+                    <span style="font-size:10px;color:${barColor};">${relPercent}% 匹配</span>
+                </div>
+                <div class="result-tags">
+                    ${p.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    resultsDiv.innerHTML = html;
+}
+
+function viewProblem(id) {
+    // 在实际项目中跳转到题目详情页
+    alert(`跳转到题目 #${id} 详情页\n(需要在 quest-mode.html 中集成)`);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 回车搜索
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doSearch();
+});
+
+// 启动时检查连接
+checkConnection();
+setInterval(checkConnection, 10000);
+</script>
+</body>
+</html>

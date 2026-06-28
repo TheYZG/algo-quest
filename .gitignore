@@ -1,6 +1,34 @@
-solution/
-*.png
+# Python virtual environment
+backend/.venv/
 __pycache__/
 *.pyc
-.DS_Store
-.workbuddy/
+*.pyo
+
+# ChromaDB data
+backend/chroma_db/
+
+# SQLite database
+backend/data/
+
+# Embedding models cache
+backend/models_cache/
+
+# Environment & secrets
+.env
+*.pem
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+
+# Temp files
+nul
+resume-output/
+*.docx
+*.pdf
+
+# Node (if any)
+node_modules/
