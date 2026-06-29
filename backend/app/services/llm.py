@@ -2,9 +2,11 @@
 LLM 服务 - OpenAI 兼容 API 调用
 使用明确的异常类型，避免将错误当作正常返回值
 """
+import logging
 from openai import AsyncOpenAI
 from app.config import get_settings
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 

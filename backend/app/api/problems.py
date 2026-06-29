@@ -1,7 +1,10 @@
 """
 题目 API - 列表、详情、搜索（从 SQLite 查询，ChromaDB 用于语义搜索）
 """
+import logging
 from fastapi import APIRouter, Query, Depends
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db

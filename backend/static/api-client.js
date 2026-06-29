@@ -36,6 +36,16 @@ const ApiClient = {
         });
 
         if (!res.ok) {
+            // 401 → token 过期/无效，自动清除认证状态
+            if (res.status === 401 || res.status === 403) {
+                this.clearToken();
+                if (typeof window.App !== 'undefined' && window.App) {
+                    window.App.token = null;
+                    window.App.user = null;
+                    window.App.saveState();
+                }
+                throw new Error('AUTH_EXPIRED');
+            }
             const err = await res.json().catch(() => ({}));
             let msg;
             if (typeof err.detail === 'string') {

@@ -1,9 +1,12 @@
 """
 Embedding 服务 - 使用 sentence-transformers 生成文本向量
 """
+import logging
 from functools import lru_cache
 from sentence_transformers import SentenceTransformer
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 

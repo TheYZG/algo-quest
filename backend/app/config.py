@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "算法大陆 - AI Agent 刷题平台"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
+    LOG_LEVEL: str = "INFO"
     HOST: str = "127.0.0.1"
     PORT: int = 8000
 

@@ -576,8 +576,7 @@ body {
 .enemy-hp-text { font-family: var(--font-code); font-size: 10px; color: var(--text-dim); margin-top: 3px; text-align: right; }
 
 .battle-panes {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 18px; margin-bottom: 18px;
+  display: flex; gap: 18px; margin-bottom: 18px;
   min-height: 400px;
 }
 .pane {
@@ -590,14 +589,27 @@ body {
   padding: 10px 16px;
   background: #161b22; border-bottom: 1px solid #21262d;
   letter-spacing: 0.02em; color: #e6edf3;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.pane-content { flex: 1; overflow-y: auto; padding: 16px; }
+.pane-content { flex: 1; overflow-y: auto; padding: 16px; word-wrap: break-word; overflow-wrap: break-word; }
 .pane-content p { margin-bottom: 10px; font-size: 14px; line-height: 1.7; }
 .pane-content pre {
   background: var(--code-bg); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 12px 16px;
   font-family: var(--font-code); font-size: 13px; color: var(--text);
   overflow-x: auto; margin-bottom: 10px;
+}
+/* 图片显示优化 */
+.pane-content img {
+  max-width: 100%; height: auto;
+  border-radius: 6px; border: 1px solid var(--border);
+  cursor: zoom-in;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: block; margin: 8px 0;
+}
+.pane-content img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(88,166,255,.15);
 }
 .pane-content h3 { font-family: var(--font-heading); font-size: 16px; margin-bottom: 8px; color: var(--text); font-weight: 700; }
 .pane-content h4 { font-family: var(--font-body); font-size: 11px; font-weight: 600; margin: 10px 0 4px; color: var(--text); letter-spacing: 0.05em; text-transform: uppercase; }
@@ -647,16 +659,38 @@ body {
 }
 /* 行号 gutter */
 .line-numbers {
-  padding: 14px 0;
+  padding: 0;
   background: #0d1117;
   font-family: 'JetBrains Mono', 'Space Mono', 'Courier New', monospace;
-  font-size: 13px; line-height: 1.6;
+  font-size: 13px;
   text-align: right; min-width: 52px;
-  user-select: none; overflow: hidden;
-  color: #484f58; white-space: pre;
+  user-select: none; overflow-y: auto; overflow-x: hidden;
+  color: #484f58;
   border-right: 1px solid #21262d;
   flex-shrink: 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
+.line-numbers::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+.line-numbers-inner {
+  display: flex; flex-direction: column;
+  padding: 14px 0;
+}
+.line-num-row {
+  display: flex; align-items: center; justify-content: flex-end;
+  height: calc(13px * 1.6);  /* font-size * line-height */
+  padding: 0 12px 0 8px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: color 0.12s, background 0.12s;
+  border-radius: 0;
+}
+.line-num-row:hover { color: #8b949e; background: rgba(88,166,255,.06); }
+.line-num-row.active {
+  color: #58a6ff; background: rgba(88,166,255,.1);
+  box-shadow: inset 2px 0 0 0 #58a6ff;
+}
+/* empty line placeholder */
+.line-num-row.empty { color: #30363d; }
 /* 代码输入区 */
 .code-textarea {
   flex: 1;
@@ -724,6 +758,13 @@ body {
 .pixel-btn.flee:hover { border-color: var(--text); color: var(--text); }
 .pixel-btn.run { color: var(--cyan); border-color: var(--cyan); }
 .pixel-btn.run:hover { background: rgba(56,189,248,.08); box-shadow: 0 2px 12px rgba(56,189,248,.15); }
+.pixel-btn.ai-chat {
+  color: #a78bfa; border-color: #a78bfa; font-size: 13px;
+}
+.pixel-btn.ai-chat:hover {
+  background: rgba(167,139,250,.08);
+  box-shadow: 0 2px 16px rgba(167,139,250,.2);
+}
 .pixel-btn.attack {
   color: var(--accent); border-color: var(--accent); font-size: 15px;
 }
@@ -1024,7 +1065,10 @@ body,
 /* Theme-specific overrides — Light 主题下全区域白底黑字 */
 body.light-theme .code-editor-wrapper,
 body.light-theme .line-numbers { background: #fafafa; }
-body.light-theme .line-numbers { color: #999; border-right-color: #e0e0e0; }
+body.light-theme .line-num-row { color: #999; }
+body.light-theme .line-num-row.active { color: #0366d6; background: rgba(3,102,214,.08); box-shadow: inset 2px 0 0 0 #0366d6; }
+body.light-theme .line-num-row:hover { color: #555; background: rgba(0,0,0,.04); }
+body.light-theme .line-numbers { border-right-color: #e0e0e0; }
 body.light-theme .code-textarea { color: #1a1c2e; }
 body.light-theme .code-textarea::placeholder { color: #aaa; }
 body.light-theme .code-textarea::selection { background: rgba(56,139,253,.2); }
@@ -1078,6 +1122,62 @@ body.light-theme .kc-diff-num { color: #1a1c2e; }
 body.light-theme .kingdom-card::after { opacity: 0.06; }
 body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
 
+/* Light 主题 — AI 精灵卡片 */
+body.light-theme .ai-card {
+  background: #fff;
+  border-color: #d4d4d8;
+  box-shadow: 0 12px 48px rgba(0,0,0,.12), 0 0 0 1px rgba(99,102,241,.1);
+}
+body.light-theme .ai-card-header {
+  background: #fafafa; border-bottom-color: #e5e5e5;
+}
+body.light-theme .ai-card-name { color: #1a1c2e; }
+body.light-theme .ai-card-sub { color: #6366f1; }
+body.light-theme .ai-card-close { color: #999; }
+body.light-theme .ai-card-close:hover { color: #1a1c2e; background: #e5e5e5; }
+body.light-theme .ai-card-body {
+  background: #fff;
+}
+body.light-theme .ai-card-footer {
+  background: #fafafa; border-top-color: #e5e5e5;
+}
+body.light-theme .ai-card-input-row input {
+  background: #fff; border-color: #d4d4d8; color: #1a1c2e;
+}
+body.light-theme .ai-card-input-row input:focus { border-color: #6366f1; }
+body.light-theme .ai-card-input-row input::placeholder { color: #999; }
+body.light-theme .ai-card-send-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+}
+/* Light — 消息气泡 */
+body.light-theme .ai-msg.assistant {
+  background: #f5f5f7; border-color: #e5e5e5; color: #1a1c2e;
+}
+body.light-theme .ai-msg.assistant strong { color: #7c3aed; }
+body.light-theme .ai-msg.assistant code {
+  background: #f0edf6; border-color: #e0dce8; color: #7c3aed;
+}
+body.light-theme .ai-msg.assistant pre {
+  background: #f8f7fa; border-color: #e0dce8; color: #1a1c2e;
+}
+body.light-theme .ai-help-btn {
+  background: #f9f9fb; border-color: #e5e5e5; color: #666;
+}
+body.light-theme .ai-help-btn:hover { border-color: #7c3aed; color: #7c3aed; }
+body.light-theme .login-nudge { color: #888; }
+body.light-theme .login-nudge a { color: #6366f1; }
+
+/* Light — 精灵按钮 */
+body.light-theme .ai-header-btn {
+  background: linear-gradient(135deg, rgba(99,102,241,.1), rgba(139,92,246,.08));
+  border-color: rgba(99,102,241,.25); color: #6366f1;
+}
+body.light-theme .ai-header-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,.18), rgba(139,92,246,.14));
+  border-color: rgba(99,102,241,.45); color: #4f46e5;
+  box-shadow: 0 0 14px rgba(99,102,241,.15);
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
@@ -1085,7 +1185,7 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
   .kingdom-grid { grid-template-columns: repeat(2, 1fr); }
   .playlist-grid { grid-template-columns: repeat(2, 1fr); }
   .level-list { grid-template-columns: 1fr; }
-  .battle-panes { grid-template-columns: 1fr; min-height: auto; }
+  .battle-panes { grid-template-columns: 1fr; min-height: auto; flex-direction: column; }
   .hud-bar { gap: 10px; font-size: 11px; }
   .hud-stat .value { font-size: 11px; }
   .screen-title { font-size: 22px; }
@@ -1149,28 +1249,95 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
 .auth-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-dim); }
 
 /* ============================================================
-   AI ASSISTANT PANEL (in Battle)
+   AI CARD — 精灵卡片（内嵌在 CODING ARENA 内）
    ============================================================ */
-/* AI Float Button — bottom-right of battle screen */
-.ai-float-btn {
-  position: absolute; bottom: 80px; right: 20px; z-index: 20;
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  background: var(--surface);
-  border: 2px solid var(--accent);
-  cursor: pointer;
-  font-size: 22px;
+.ai-card {
+  display: none;
+  position: absolute; top: 42px; right: 12px; z-index: 50;
+  width: 380px; max-height: calc(100% - 58px);
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.6), 0 0 0 1px rgba(99,102,241,.08);
+  flex-direction: column;
+  overflow: hidden;
+  animation: cardIn 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ai-card.show { display: flex; }
+.ai-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+}
+.ai-card-avatar {
+  font-size: 26px; width: 40px; height: 40px;
+  border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 20px rgba(255,107,107,0.15);
-  transition: all 0.3s var(--ease);
-  animation: rainbowGlow 4s infinite;
+  flex-shrink: 0;
 }
-.ai-float-btn:hover {
-  transform: scale(1.12);
-  box-shadow: 0 6px 28px rgba(255,107,107,0.3);
+.ai-card-name { font-size: 14px; font-weight: 700; color: #e6edf3; }
+.ai-card-sub { font-size: 11px; color: #6366f1; margin-top: 1px; }
+.ai-card-close {
+  margin-left: auto; background: none; border: none;
+  color: #484f58; font-size: 16px; cursor: pointer;
+  padding: 4px 8px; border-radius: 6px; transition: all 0.15s;
 }
+.ai-card-close:hover { color: #e6edf3; background: #21262d; }
+.ai-card-body {
+  flex: 1; overflow-y: auto; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 60px; max-height: 360px;
+}
+.ai-card-footer {
+  padding: 10px 16px 14px; border-top: 1px solid #21262d;
+  flex-shrink: 0;
+}
+.ai-card-input-row { display: flex; gap: 8px; }
+.ai-card-input-row input {
+  flex: 1; padding: 9px 14px;
+  background: #161b22; border: 1px solid #30363d;
+  border-radius: 10px; color: #c9d1d9;
+  font-family: var(--font-body); font-size: 12px;
+  outline: none; transition: border-color 0.2s;
+}
+.ai-card-input-row input:focus { border-color: #6366f1; }
+.ai-card-input-row input::placeholder { color: #484f58; }
+.ai-card-send-btn {
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity 0.2s;
+}
+.ai-card-send-btn:hover { opacity: 0.9; }
 
-/* AI Dialog Overlay */
+/* 精灵按钮（头部右侧） */
+.ai-header-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px 4px 8px;
+  background: linear-gradient(135deg, rgba(99,102,241,.18), rgba(139,92,246,.14));
+  border: 1px solid rgba(99,102,241,.3);
+  border-radius: 8px; color: #a5b4fc; cursor: pointer;
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  transition: all 0.2s ease; white-space: nowrap;
+}
+.ai-header-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,.3), rgba(139,92,246,.25));
+  border-color: rgba(99,102,241,.55);
+  color: #c7d2fe;
+  box-shadow: 0 0 14px rgba(99,102,241,.2);
+}
+.ai-header-icon { font-size: 15px; line-height: 1; }
+.ai-header-label { letter-spacing: 0.03em; }
+
+/* ------- (old side-panel CSS removed) ------- */
 .ai-dialog-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,0.25);
@@ -1213,9 +1380,43 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
   display: flex; flex-direction: column; gap: 8px;
   max-height: 350px;
 }
-.ai-msg { font-size: 13px; line-height: 1.5; padding: 8px 12px; border-radius: var(--radius-sm); max-width: 90%; word-break: break-word; }
+.ai-msg { font-size: 13px; line-height: 1.6; padding: 10px 14px; border-radius: var(--radius-sm); max-width: 90%; word-break: break-word; }
 .ai-msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
-.ai-msg.assistant { align-self: flex-start; background: var(--card); border: 1px solid var(--border); }
+.ai-msg.assistant { align-self: flex-start; background: var(--card); border: 1px solid var(--border); color: var(--text); }
+/* Markdown rendered styles inside assistant messages */
+.ai-msg.assistant strong { color: #f0c060; font-weight: 700; }
+.ai-msg.assistant em { color: var(--text-dim); font-style: italic; }
+.ai-msg.assistant code {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 3px; padding: 1px 5px;
+  font-family: var(--font-code); font-size: 12px;
+  color: #e6b450;
+}
+.ai-msg.assistant pre {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  margin: 8px 0; overflow-x: auto;
+  font-family: var(--font-code); font-size: 12px;
+  line-height: 1.5; color: #c9d1d9;
+}
+.ai-msg.assistant pre code {
+  background: none; border: none; padding: 0;
+  color: inherit; font-size: inherit;
+}
+.ai-msg.assistant h3, .ai-msg.assistant h4 {
+  font-family: var(--font-heading); font-size: 14px;
+  font-weight: 700; margin: 10px 0 4px; color: #e6edf3;
+}
+.ai-msg.assistant ul, .ai-msg.assistant ol {
+  padding-left: 18px; margin: 4px 0;
+}
+.ai-msg.assistant li { margin-bottom: 2px; }
+.ai-msg.assistant p { margin-bottom: 6px; }
+.ai-msg.assistant hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+.ai-msg.assistant blockquote {
+  border-left: 3px solid var(--accent); padding: 4px 10px;
+  margin: 6px 0; color: var(--text-dim); font-style: italic;
+}
 .ai-help-row { display: flex; gap: 6px; padding: 8px 0; }
 .ai-help-btn {
   flex: 1; padding: 6px 8px;
@@ -1243,6 +1444,35 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
 .ai-input-wrap button:hover { opacity: 0.9; }
 .ai-dialog .login-nudge { text-align: center; padding: 16px; font-size: 13px; color: var(--text-dim); }
 .ai-dialog .login-nudge a { color: var(--accent); cursor: pointer; font-weight: 600; }
+
+/* ============================================================
+   IMAGE LIGHTBOX
+   ============================================================ */
+.image-lightbox {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,.92);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  cursor: zoom-out;
+}
+.image-lightbox.show { opacity: 1; visibility: visible; }
+.image-lightbox img {
+  max-width: 92vw; max-height: 92vh;
+  border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.6);
+  border: 2px solid rgba(255,255,255,.08);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.image-lightbox.show img { transform: scale(1); }
+.image-lightbox-close {
+  position: absolute; top: 20px; right: 28px;
+  font-size: 32px; color: rgba(255,255,255,.6);
+  cursor: pointer; z-index: 1;
+  line-height: 1; padding: 8px;
+  transition: color 0.2s;
+}
+.image-lightbox-close:hover { color: #fff; }
 
 </style>
 </head>
@@ -1395,7 +1625,7 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
     </div>
 
     <div class="battle-panes">
-      <div class="pane">
+      <div class="pane" style="flex:1.2;">
         <div class="pane-header">📜 QUEST BRIEFING</div>
         <div class="pane-content">
           <div id="questBriefing"></div>
@@ -1414,8 +1644,43 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
           </div>
         </div>
       </div>
-      <div class="pane">
-        <div class="pane-header">⚔️ CODING ARENA</div>
+      <div class="pane" style="flex:1.4; position:relative;">
+        <div class="pane-header">
+          <span>⚔️ CODING ARENA</span>
+          <button class="ai-header-btn" id="aiHeaderBtn" onclick="toggleAiPanel()" title="算法精灵">
+            <span class="ai-header-icon">🧚</span>
+            <span class="ai-header-label">助手</span>
+          </button>
+        </div>
+
+        <!-- ═══ AI 精灵卡片 ═══ -->
+        <div class="ai-card" id="aiCard">
+          <div class="ai-card-header">
+            <span class="ai-card-avatar">🧚</span>
+            <div>
+              <div class="ai-card-name">算法精灵</div>
+              <div class="ai-card-sub">AI 刷题助手</div>
+            </div>
+            <button class="ai-card-close" onclick="toggleAiPanel()">✕</button>
+          </div>
+          <div class="ai-card-body" id="aiDialogBody">
+            <div class="login-nudge" id="aiLoginNudge">
+              登录后解锁 AI 助手！<br><a onclick="showAuth()">🔐 立即登录</a>
+            </div>
+            <div class="ai-help-row" id="aiHelpRow" style="display:none;">
+              <button class="ai-help-btn" onclick="requestAIHelp('hint')">💡 提示 <span class="cost">1💰</span></button>
+              <button class="ai-help-btn" onclick="requestAIHelp('guide')">🗺️ 引导 <span class="cost">3💰</span></button>
+              <button class="ai-help-btn" onclick="requestAIHelp('explain')">📖 详解 <span class="cost">5💰</span></button>
+            </div>
+          </div>
+          <div class="ai-card-footer" id="aiInputWrap" style="display:none;">
+            <div class="ai-card-input-row">
+              <input type="text" id="aiInput" placeholder="问算法精灵..." onkeydown="if(event.key==='Enter')sendAiMessage()">
+              <button class="ai-card-send-btn" onclick="sendAiMessage()">发送</button>
+            </div>
+          </div>
+        </div>
+
         <div class="editor-toolbar">
           <select class="lang-select" id="langSelect" onchange="onLanguageChange()">
             <option value="python">🐍 Python 3</option>
@@ -1431,7 +1696,11 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
           </div>
         </div>
         <div class="code-editor-wrapper" id="codeEditorWrapper">
-          <div class="line-numbers" id="lineNumbers">1</div>
+          <div class="line-numbers" id="lineNumbers">
+            <div class="line-numbers-inner" id="lineNumbersInner">
+              <div class="line-num-row active" data-line="1">1</div>
+            </div>
+          </div>
           <textarea class="code-textarea" id="codeEditor" placeholder="// Write your solution here..." spellcheck="false"></textarea>
         </div>
         <div class="console-panel" id="consolePanel">
@@ -1446,37 +1715,10 @@ body.light-theme .kingdom-card:hover::after { opacity: 0.12; }
       </div>
     </div>
 
-    <!-- AI Float Button -->
-    <button class="ai-float-btn" onclick="openAiDialog()" title="算法精灵">🧚</button>
-
     <div class="battle-actions">
       <button class="pixel-btn run" onclick="runCode()">▶ RUN CODE</button>
+      <button class="pixel-btn ai-chat" onclick="toggleAiPanel()">🧚 AI 助手</button>
       <button class="pixel-btn attack" onclick="attack()">⚔️ ATTACK!</button>
-    </div>
-  </div>
-
-  <!-- AI Dialog Overlay -->
-  <div class="ai-dialog-overlay hidden" id="aiDialogOverlay" onclick="if(event.target===this)closeAiDialog()">
-    <div class="ai-dialog">
-      <div class="ai-dialog-header">
-        <span class="sprite">🧚</span>
-        <span>算法精灵 · AI 助手</span>
-        <button class="ai-dialog-close" onclick="closeAiDialog()">✕</button>
-      </div>
-      <div class="ai-dialog-body" id="aiDialogBody">
-        <div class="login-nudge" id="aiLoginNudge">
-          登录后解锁 AI 助手！<br><a onclick="showAuth()">🔐 立即登录</a>
-        </div>
-        <div class="ai-help-row" id="aiHelpRow" style="display:none;">
-          <button class="ai-help-btn" onclick="requestAIHelp('hint')">💡 提示 <span class="cost">1💰</span></button>
-          <button class="ai-help-btn" onclick="requestAIHelp('guide')">🗺️ 引导 <span class="cost">3💰</span></button>
-          <button class="ai-help-btn" onclick="requestAIHelp('explain')">📖 详解 <span class="cost">5💰</span></button>
-        </div>
-        <div class="ai-input-wrap" id="aiInputWrap" style="display:none;">
-          <input type="text" id="aiInput" placeholder="问算法精灵..." onkeydown="if(event.key==='Enter')sendAiMessage()">
-          <button onclick="sendAiMessage()">发送</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -4830,18 +5072,64 @@ function onLanguageChange() {
 }
 
 // ============================================================
-// LINE NUMBERS
+// LINE NUMBERS — 重新设计：独立行元素 + 高亮 + 点击跳转
 // ============================================================
 function updateLineNumbers() {
   const editor = document.getElementById('codeEditor');
+  const inner = document.getElementById('lineNumbersInner');
+  if (!editor || !inner) return;
+
   const lines = editor.value.split('\n').length;
-  const nums = Array.from({length: Math.max(lines, 1)}, (_, i) => i + 1).join('\n');
-  document.getElementById('lineNumbers').textContent = nums;
+  const currentCount = inner.children.length;
+
+  if (lines === currentCount) return; // 行数没变，跳过
+
+  // 生成行号元素
+  let html = '';
+  for (let i = 0; i < lines; i++) {
+    html += '<div class="line-num-row" data-line="' + (i + 1) + '" onclick="jumpToLine(' + (i + 1) + ')" title="行 ' + (i + 1) + '">' + (i + 1) + '</div>';
+  }
+  inner.innerHTML = html;
+
+  // 恢复当前行高亮
+  highlightCurrentLine();
 }
-window.updateLineNumbers = updateLineNumbers;
+
+function highlightCurrentLine() {
+  const editor = document.getElementById('codeEditor');
+  const inner = document.getElementById('lineNumbersInner');
+  if (!editor || !inner) return;
+
+  const pos = editor.selectionStart;
+  const before = editor.value.substring(0, pos);
+  const currentLine = before.split('\n').length;
+
+  const rows = inner.querySelectorAll('.line-num-row');
+  rows.forEach(r => {
+    const line = parseInt(r.dataset.line);
+    r.classList.toggle('active', line === currentLine);
+  });
+}
+
+function jumpToLine(lineNum) {
+  const editor = document.getElementById('codeEditor');
+  if (!editor) return;
+  const lines = editor.value.split('\n');
+  let pos = 0;
+  for (let i = 0; i < Math.min(lineNum - 1, lines.length); i++) {
+    pos += lines[i].length + 1;
+  }
+  editor.setSelectionRange(pos, pos);
+  editor.focus();
+  highlightCurrentLine();
+}
 
 function syncScroll() {
-  document.getElementById('lineNumbers').scrollTop = document.getElementById('codeEditor').scrollTop;
+  const lineNums = document.getElementById('lineNumbers');
+  const editor = document.getElementById('codeEditor');
+  if (lineNums && editor) {
+    lineNums.scrollTop = editor.scrollTop;
+  }
 }
 
 // ============================================================
@@ -5163,6 +5451,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const codeEditor = document.getElementById('codeEditor');
   codeEditor.addEventListener('input', updateLineNumbers);
   codeEditor.addEventListener('scroll', syncScroll);
+  // 光标移动时同步高亮行号
+  codeEditor.addEventListener('click', highlightCurrentLine);
+  codeEditor.addEventListener('keyup', function(e) {
+    if (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End' || e.key === 'PageUp' || e.key === 'PageDown') {
+      highlightCurrentLine();
+    }
+  });
   codeEditor.addEventListener('keydown', function(e) {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -5313,24 +5608,38 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ============================================================
-// AI ASSISTANT FUNCTIONS
+// AI ASSISTANT — 精灵卡片
 // ============================================================
 
-function openAiDialog() {
-  document.getElementById('aiDialogOverlay').classList.remove('hidden');
-  updateAiPanelVisibility();
+function toggleAiPanel() {
+  var card = document.getElementById('aiCard');
+  if (!card) return;
+  var isOpen = card.classList.contains('show');
+  if (isOpen) {
+    card.classList.remove('show');
+  } else {
+    card.classList.add('show');
+    updateAiPanelVisibility();
+    var inp = document.getElementById('aiInput');
+    if (inp) setTimeout(function(){ inp.focus(); }, 100);
+  }
 }
 
+// 兼容
+function openAiDialog() {
+  var card = document.getElementById('aiCard');
+  if (card && !card.classList.contains('show')) toggleAiPanel();
+}
 function closeAiDialog() {
-  document.getElementById('aiDialogOverlay').classList.add('hidden');
+  var card = document.getElementById('aiCard');
+  if (card && card.classList.contains('show')) toggleAiPanel();
 }
 
 function updateAiPanelVisibility() {
-  const hasProblem = document.getElementById('screenBattle').classList.contains('active');
   if (App.isLoggedIn()) {
     document.getElementById('aiLoginNudge').style.display = 'none';
-    document.getElementById('aiHelpRow').style.display = hasProblem ? 'flex' : 'none';
-    document.getElementById('aiInputWrap').style.display = hasProblem ? 'flex' : 'none';
+    document.getElementById('aiHelpRow').style.display = 'flex';
+    document.getElementById('aiInputWrap').style.display = 'block';
   } else {
     document.getElementById('aiLoginNudge').style.display = 'block';
     document.getElementById('aiHelpRow').style.display = 'none';
@@ -5356,6 +5665,71 @@ async function requestAIHelp(level) {
   } catch (e) {
     addAiMessage('assistant', '⚠️ ' + (e.message || '获取帮助失败'));
   }
+}
+
+// ============================================================
+// LIGHTWEIGHT MARKDOWN → HTML RENDERER
+// ============================================================
+function renderMarkdown(text) {
+  if (!text) return '';
+  // 1. 转义 HTML 防止注入
+  var html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 2. 代码块 ```...``` → <pre><code>
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, lang, code) {
+    return '<pre><code>' + code.trim() + '</code></pre>';
+  });
+
+  // 3. 行内代码 `code`
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // 4. 粗体 **text** 或 __text__
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+  // 5. 斜体 *text* 或 _text_（但不在单词中间）
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/\b_(.+?)_\b/g, '<em>$1</em>');
+
+  // 6. 标题 ### / ## / #
+  html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^# (.+)$/gm, '<h3>$1</h3>');
+
+  // 7. 无序列表 - item / * item
+  html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+  // 包裹连续的 <li> 用 <ul>
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+  // 8. 有序列表 1. item
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, function(m) {
+    // 不在已有的 <ul> 内才包 <ol>
+    if (m.indexOf('<ul>') === -1) return '<ol>' + m + '</ol>';
+    return m;
+  });
+
+  // 9. 水平线 ---
+  html = html.replace(/^\-{3,}$/gm, '<hr>');
+
+  // 10. 引用 > text
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // 11. 双换行 → 段落 <p>
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = '<p>' + html + '</p>';
+
+  // 12. 单换行 → <br>
+  html = html.replace(/\n/g, '<br>');
+
+  // 13. 清理空段落
+  html = html.replace(/<p><br><\/p>/g, '');
+  html = html.replace(/<p>\s*<\/p>/g, '');
+
+  return html;
 }
 
 async function sendAiMessage() {
@@ -5385,9 +5759,16 @@ function addAiMessage(role, content, level) {
   const body = document.getElementById('aiDialogBody');
   const div = document.createElement('div');
   div.className = 'ai-msg ' + role;
-  if (role === 'assistant' && level) {
-    const labels = { hint: '💡 提示', guide: '🗺️ 引导', explain: '📖 详解' };
-    div.innerHTML = '<div style="font-size:10px;color:var(--amber);margin-bottom:4px;">' + (labels[level] || '') + '</div>' + content;
+  if (role === 'assistant') {
+    // 渲染 Markdown → HTML
+    div.innerHTML = renderMarkdown(content);
+    if (level) {
+      const labels = { hint: '💡 提示', guide: '🗺️ 引导', explain: '📖 详解' };
+      const labelEl = document.createElement('div');
+      labelEl.style.cssText = 'font-size:10px;color:var(--amber);margin-bottom:6px;font-weight:600;';
+      labelEl.textContent = labels[level] || '';
+      div.insertBefore(labelEl, div.firstChild);
+    }
   } else {
     div.textContent = content;
   }
@@ -5400,7 +5781,44 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && document.activeElement === document.getElementById('aiInput')) {
     sendAiMessage();
   }
+  // ESC 关闭图片灯箱和 AI 卡片
+  if (e.key === 'Escape') {
+    closeImageLightbox();
+    var card = document.getElementById('aiCard');
+    if (card && card.classList.contains('show')) {
+      toggleAiPanel();
+    }
+  }
 });
+
+// ============================================================
+// IMAGE LIGHTBOX — 点击图片放大查看
+// ============================================================
+function openImageLightbox(src) {
+  const lb = document.getElementById("imageLightbox");
+  const img = document.getElementById("lightboxImg");
+  if (!lb || !img) return;
+  img.src = src;
+  lb.classList.add("show");
+}
+function closeImageLightbox() {
+  const lb = document.getElementById("imageLightbox");
+  if (lb) lb.classList.remove("show");
+}
+
+// 事件委托：题目描述区域内图片点击
+document.addEventListener("click", function(e) {
+  if (e.target.tagName === "IMG" && e.target.closest("#questBriefing")) {
+    openImageLightbox(e.target.src);
+  }
+});
+
 </script>
+<!-- Image Lightbox -->
+<div class="image-lightbox" id="imageLightbox" onclick="closeImageLightbox()">
+  <span class="image-lightbox-close">&times;</span>
+  <img id="lightboxImg" src="" alt="" />
+</div>
+
 </body>
 </html>

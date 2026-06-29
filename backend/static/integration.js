@@ -241,7 +241,11 @@
           coinsRemaining: data.coins_remaining || 0,
         };
       } catch (err) {
-        toast('error', 'AI 助手请求失败', err.message || '');
+        if (err.message === 'AUTH_EXPIRED') {
+          this._onAuthExpired();
+        } else {
+          toast('error', 'AI 助手请求失败', err.message || '');
+        }
         throw err;
       }
     },
@@ -385,11 +389,8 @@
       } catch (_) { /* corrupt data */ }
     },
 
-    // ---------- Init ----------
+    // ---------- Page Init ----------
 
-    /**
-     * 页面加载时调用，从 localStorage 恢复状态与认证会话
-     */
     _init() {
       this.loadState();
       // 如果 ApiClient 已有 token（从 api-client.js 自身的 localStorage 读取），确保 App 同步
@@ -403,6 +404,25 @@
           // 静默失败 - user 信息可能不可用
         });
       }
+
+      // 监听全局未捕获错误，处理 AUTH_EXPIRED
+      var app = this;
+      window.addEventListener('unhandledrejection', function (e) {
+        if (e.reason && e.reason.message === 'AUTH_EXPIRED') {
+          e.preventDefault();
+          app._onAuthExpired();
+        }
+      });
+    },
+
+    /**
+     * 认证过期处理：清空状态，提示重新登录
+     */
+    _onAuthExpired() {
+      toast('warning', '会话已过期', '请重新登录后继续使用 AI 助手');
+      // 触发 UI 更新
+      if (typeof updateHud === 'function') updateHud();
+      if (typeof updateLoginUI === 'function') updateLoginUI();
     },
   };
 

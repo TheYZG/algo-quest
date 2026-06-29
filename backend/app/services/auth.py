@@ -1,7 +1,10 @@
 """
 认证服务 - JWT token 生成/验证、密码哈希
 """
+import logging
 import bcrypt
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 

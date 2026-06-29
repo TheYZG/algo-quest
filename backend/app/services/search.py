@@ -3,7 +3,10 @@
 利用 embedding + ChromaDB 实现自然语言搜题
 """
 import json
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from app.vectordb import get_collection
 from app.services.embedding import embed_text

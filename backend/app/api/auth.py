@@ -1,7 +1,10 @@
 """
 用户认证 API
 """
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = logging.getLogger(__name__)
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
