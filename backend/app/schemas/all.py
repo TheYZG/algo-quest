@@ -150,6 +150,22 @@ class SubmissionRequest(BaseModel):
     code: str
 
 
+class TestCaseResult(BaseModel):
+    """单个测试用例的执行结果"""
+    passed: bool
+    input: str = ""
+    expected: str = ""
+    actual: str = ""
+    error: str = ""
+    runtime_ms: float = 0.0
+
+
+class ExecutionDetail(BaseModel):
+    """代码执行详情"""
+    test_results: list[TestCaseResult] = []
+    execution_mode: str = "mock"  # "sandbox" | "mock"
+
+
 class SubmissionResponse(BaseModel):
     id: str
     problem_id: str
@@ -158,6 +174,8 @@ class SubmissionResponse(BaseModel):
     result: Optional[str] = None
     coins_earned: int = 0
     created_at: datetime
+    test_results: list[TestCaseResult] = []
+    ai_feedback: Optional[dict] = None  # AI 判题反馈 {analysis, issues, suggestions, comparison, confidence}
 
     class Config:
         from_attributes = True

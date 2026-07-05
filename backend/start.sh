@@ -15,6 +15,7 @@ PYTHON="/c/Users/21349/.workbuddy/binaries/python/envs/default/Scripts/python"
 UVICORN="/c/Users/21349/.workbuddy/binaries/python/envs/default/Scripts/uvicorn"
 
 cd "$(dirname "$0")"
+export PYTHONPATH="$(pwd)"
 
 # 检查 .env
 if [ ! -f ".env" ]; then

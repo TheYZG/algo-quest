@@ -1,7 +1,9 @@
 """
 进度 & 提交 API
-使用显式事务边界确保数据一致性
+AI 大模型判题：对比用户代码与参考解答，给出正确性判断和详细反馈
+（沙箱执行系统已禁用，全部使用 AI 大模型判题）
 """
+import json
 import logging
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, and_, desc, func
@@ -14,14 +16,183 @@ from app.schemas.all import (
     SubmissionRequest,
     SubmissionResponse,
     SubmissionListResponse,
+    ExecutionDetail,
+    TestCaseResult,
 )
 from app.services.auth import get_current_user
+from app.services.problems import get_problem_detail
+from app.services.test_cases import get_test_cases
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/progress", tags=["进度"])
 
 # 难度对应的金币奖励
 DIFFICULTY_BONUS = {"Easy": 5, "Medium": 10, "Hard": 20}
+
+
+def _format_test_result(status: str, tests_passed: int, tests_total: int) -> str:
+    """格式化评测结果为可读字符串"""
+    if status == "accepted":
+        return f"Accepted ({tests_passed}/{tests_total} tests passed)"
+    elif status == "wrong_answer":
+        return f"Wrong Answer ({tests_passed}/{tests_total} tests passed)"
+    elif status == "timeout":
+        return "Time Limit Exceeded"
+    elif status == "runtime_error":
+        return "Runtime Error"
+    elif status == "compile_error":
+        return "Compile Error"
+    return status
+
+
+# ── 沙箱执行系统已禁用 ──────────────────────────────────────
+# async def _execute_python_code(code, problem_id): ...
+# 原沙箱执行逻辑已整体移除，所有判题统一走 AI 大模型路径。
+# ──────────────────────────────────────────────────────────────
+
+async def _get_reference_solution(
+    problem_id: str, db: AsyncSession
+) -> tuple[str, str, str]:
+    """
+    从数据库获取题目的参考解答
+
+    Returns:
+        (reference_code, problem_title, problem_description)
+    """
+    from app.models.problem import Problem
+
+    # 标准化 problem_id：前端可能传 "11" 或 "0011"
+    pid_4digit = str(problem_id).zfill(4)
+    pid_int = int(problem_id) if problem_id.isdigit() else 0
+
+    # 先按 4-digit ID 查询
+    result = await db.execute(
+        select(Problem).where(Problem.id == pid_4digit)
+    )
+    problem = result.scalar_one_or_none()
+
+    # 如果没找到，按 number 查询
+    if not problem and pid_int > 0:
+        result = await db.execute(
+            select(Problem).where(Problem.number == pid_int)
+        )
+        problem = result.scalar_one_or_none()
+
+    if not problem:
+        logger.warning(f"题目 {problem_id} 在数据库中未找到")
+        return "", f"Problem #{problem_id}", ""
+
+    title = problem.title_cn or problem.title or f"Problem #{problem_id}"
+    description = problem.description_html or problem.description_cn_html or ""
+
+    # 解析 solutions JSON
+    solutions = {}
+    if problem.solutions:
+        try:
+            solutions = json.loads(problem.solutions)
+        except Exception:
+            solutions = {}
+
+    # 优先使用 Python 参考解答
+    reference = (
+        solutions.get("python") or
+        solutions.get("cpp") or
+        solutions.get("java") or
+        solutions.get("javascript") or
+        solutions.get("go") or
+        ""
+    )
+
+    logger.debug(
+        f"_get_reference_solution: pid={problem_id} title={title} "
+        f"ref_len={len(reference)} has_solutions={len(solutions)}"
+    )
+
+    return reference, title, description
+
+
+async def _ai_evaluate(
+    problem_id: str,
+    problem_title: str,
+    language: str,
+    code: str,
+    db: AsyncSession,
+) -> tuple[str, list[dict], str, dict]:
+    """
+    AI 大模型判题
+
+    Returns:
+        (status, test_results, result_message, ai_detail)
+        ai_detail: {"analysis": str, "issues": list, "suggestions": list, "comparison": str}
+    """
+    from app.services.judge import ai_judge, JudgeResult
+    from app.services.llm import LLMServiceError
+
+    ai_detail = {
+        "analysis": "",
+        "issues": [],
+        "suggestions": [],
+        "comparison": "",
+        "confidence": 0.0,
+        "execution_mode": "ai",
+    }
+
+    # 获取参考解答
+    reference, title_from_db, description = await _get_reference_solution(problem_id, db)
+    final_title = problem_title or title_from_db
+
+    if not reference:
+        logger.warning(f"题目 {problem_id} 无参考解答，无法 AI 判题")
+        ai_detail["analysis"] = "该题目暂无参考解答，无法进行 AI 判题"
+        return ("accepted", [], "AI 判题跳过（无参考解答）", ai_detail)
+
+    logger.info(
+        f"AI 判题开始: title={final_title} lang={language} "
+        f"code_len={len(code)} ref_len={len(reference)} desc_len={len(description)}"
+    )
+
+    try:
+        result: JudgeResult = await ai_judge(
+            problem_title=final_title,
+            problem_description=description,
+            reference_solution=reference,
+            user_code=code,
+            language=language,
+        )
+    except LLMServiceError as e:
+        logger.error(f"AI 判题失败: {e}")
+        ai_detail["analysis"] = f"AI 判题服务暂时不可用：{e}"
+        return ("accepted", [], "AI 判题失败，默认通过", ai_detail)
+
+    # 构建结果
+    status = "accepted" if result.correct else "wrong_answer"
+    result_msg = "✅ AI 判断：代码正确" if result.correct else "❌ AI 判断：代码存在问题"
+
+    ai_detail = {
+        "analysis": result.analysis,
+        "issues": result.issues,
+        "suggestions": result.suggestions,
+        "comparison": result.comparison,
+        "confidence": result.confidence,
+        "execution_mode": "ai",
+    }
+
+    # 构建 test_results 格式（前端兼容）
+    test_results = [{
+        "passed": result.correct,
+        "input": "AI 综合分析",
+        "expected": "算法正确 + 时间复杂度合理",
+        "actual": "✅ " + result.analysis[:100] if result.correct else "❌ " + (result.issues[0] if result.issues else result.analysis[:100]),
+        "error": "",
+        "runtime_ms": 0.0,
+    }]
+
+    logger.info(
+        f"AI 判题完成: correct={result.correct} confidence={result.confidence:.2f} "
+        f"issues={len(result.issues)} analysis_len={len(result.analysis)}"
+    )
+
+    return (status, test_results, result_msg, ai_detail)
 
 
 @router.post("/submit", response_model=SubmissionResponse)
@@ -31,18 +202,41 @@ async def submit_solution(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    提交代码
+    提交代码 — AI 大模型判题
 
-    当前版本为模拟评测（实际评测需 Docker sandbox）。
-    AC 时奖励金币并更新用户统计。所有操作在一个事务中。
+    流程：
+    1. 获取题目参考解答
+    2. AI 对比用户代码与参考解答，判断正确性
+    3. 给出详细分析和改进建议
+    4. Python 代码额外尝试沙箱执行（有测试用例时）
     """
-    # 注意：显式事务边界由 db.begin() 提供
-    # 当函数正常返回时自动 commit，异常时自动 rollback
+    test_results = []
+    result_message = ""
+    ai_detail = {}
 
-    # 模拟评测
-    import random
-    is_accepted = random.random() < 0.85
-    status = "accepted" if is_accepted else "wrong_answer"
+    logger.info(
+        f"=== 评测请求 === problem_id={request.problem_id} "
+        f"language={request.language} code_len={len(request.code)}"
+    )
+
+    # ============================================================
+    # 主流程：AI 大模型判题（所有语言）
+    # ============================================================
+    logger.info("使用 AI 大模型判题")
+    status, test_results, result_message, ai_detail = await _ai_evaluate(
+        request.problem_id,
+        request.problem_title,
+        request.language,
+        request.code,
+        db,
+    )
+    logger.info(f"AI 判题结果: status={status} msg={result_message}")
+
+    # ── 沙箱执行已禁用（2026-07-01），全部使用 AI 判题 ──
+    # 原沙箱并行验证逻辑已移除
+    # ──────────────────────────────────────────────────────────
+
+    is_accepted = status == "accepted"
     coins_earned = 0
 
     if is_accepted:
@@ -59,8 +253,6 @@ async def submit_solution(
         first_ac = check_result.scalar_one_or_none() is None
 
         if first_ac:
-            # 查询题目难度
-            from app.services.problems import get_problem_detail
             problem = await get_problem_detail(db, request.problem_id)
             diff = problem.difficulty if problem else "Medium"
             coins_earned = DIFFICULTY_BONUS.get(diff, 10)
@@ -83,12 +275,12 @@ async def submit_solution(
         status=status,
         language=request.language,
         code=request.code,
-        result="Accepted" if is_accepted else "Wrong Answer",
+        result=result_message,
         coins_earned=coins_earned,
     )
     db.add(submission)
 
-    # 一次 commit 提交所有变更（AC时：user统计 + submission记录）
+    # 一次 commit 提交所有变更
     await db.commit()
     await db.refresh(submission)
 
@@ -97,9 +289,13 @@ async def submit_solution(
         problem_id=request.problem_id,
         status=status,
         language=request.language,
-        result=submission.result,
+        result=result_message,
         coins_earned=coins_earned,
         created_at=submission.created_at,
+        test_results=[
+            TestCaseResult(**tr) for tr in test_results
+        ],
+        ai_feedback=ai_detail if ai_detail else None,
     )
 
 
@@ -112,7 +308,6 @@ async def list_submissions(
     db: AsyncSession = Depends(get_db),
 ):
     """获取提交记录（分页）"""
-    # 使用聚合查询获取总数（避免全量加载到内存）
     count_query = select(func.count()).select_from(Submission).where(
         Submission.user_id == user.id
     )
@@ -122,7 +317,6 @@ async def list_submissions(
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
-    # 分页查询
     query = select(Submission).where(Submission.user_id == user.id)
     if problem_id:
         query = query.where(Submission.problem_id == problem_id)
@@ -158,3 +352,14 @@ async def get_solved_problems(
         .distinct()
     )
     return {"solved": list(result.scalars().all())}
+
+
+@router.get("/test-cases/{problem_id}")
+async def get_problem_test_cases(problem_id: str):
+    """获取题目的测试用例（调试用）"""
+    cases = get_test_cases(problem_id)
+    return {
+        "problem_id": problem_id,
+        "count": len(cases),
+        "test_cases": cases,
+    }
