@@ -1,11 +1,25 @@
 /**
  * 算法大陆 API 客户端
  * 所有前端页面的统一接口层
+ *
+ * API_BASE 自动检测策略：
+ * 1. 同源访问（http://xxx:8000/static/...）→ 使用同源 /api
+ * 2. file:// 协议或非同源 → 默认 localhost:8000
+ * 3. 可手动覆盖：ApiClient.setBase('https://your-domain.com/api')
  */
-const API_BASE = 'http://localhost:8000/api';
+(function() {
+  var loc = window.location;
+  if (loc.protocol === 'file:') {
+    window.API_BASE = 'http://localhost:8000/api';
+  } else {
+    window.API_BASE = loc.origin + '/api';
+  }
+})();
 
-const ApiClient = {
+var ApiClient = {
     token: null,
+
+    setBase(url) { window.API_BASE = url; },
 
     setToken(token) {
         this.token = token;
@@ -29,7 +43,7 @@ const ApiClient = {
         const token = this.getToken();
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const res = await fetch(`${API_BASE}${path}`, {
+        const res = await fetch(`${window.API_BASE}${path}`, {
             method,
             headers,
             body: body ? JSON.stringify(body) : null,

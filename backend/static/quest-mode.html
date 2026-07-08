@@ -4926,7 +4926,11 @@ function loadState() {
     if (data) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed.solvedProblems)) {
-        state.solvedProblems = parsed.solvedProblems;
+        // 兼容旧格式（纯数字）→ 迁移为对象格式
+        state.solvedProblems = parsed.solvedProblems.map(function(s) {
+          if (typeof s === 'object' && s.id) return s;
+          return {id: String(s), title: 'Problem ' + s, kingdom: '未知'};
+        });
       }
       if (typeof parsed.adventureStage === 'number') {
         state.adventureStage = parsed.adventureStage;
@@ -4973,7 +4977,7 @@ async function doSearch() {
   resultsDiv.innerHTML = '<div class="search-loading"><div class="search-spinner"></div><p>AI 正在理解你的搜索意图...</p></div>';
 
   try {
-    var res = await fetch('http://localhost:8000/api/problems/search', {
+    var res = await fetch((window.API_BASE || 'http://localhost:8000/api') + '/problems/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5066,7 +5070,13 @@ function getCoins() {
 }
 
 function isProblemSolved(problemNumber) {
-  return state.solvedProblems.includes(String(problemNumber));
+  var id = String(problemNumber);
+  for (var i = 0; i < state.solvedProblems.length; i++) {
+    var s = state.solvedProblems[i];
+    // 兼容旧格式（纯数字）和新格式（{id, title, kingdom} 对象）
+    if ((typeof s === 'object' && String(s.id) === id) || String(s) === id) return true;
+  }
+  return false;
 }
 
 function getReward(difficulty) {
@@ -5953,7 +5963,7 @@ async function attack() {
 
         const wasNewSolve = !isProblemSolved(num);
         if (wasNewSolve) {
-          state.solvedProblems.push(num);
+          state.solvedProblems.push({id: num, title: state.currentLevelTitle || ('Problem ' + num), kingdom: state.currentKingdom || '未知'});
           if (state.currentMode === 'adventure') {
             const currentStage = ADVENTURE_STAGES.find(s => s.number === parseInt(num));
             if (currentStage && currentStage.stage === state.adventureStage) {
@@ -6014,7 +6024,7 @@ function fallbackMockAttack(btns, num, levelInfo, title, language, code) {
 
       const wasNewSolve = !isProblemSolved(num);
       if (wasNewSolve) {
-        state.solvedProblems.push(num);
+        state.solvedProblems.push({id: num, title: state.currentLevelTitle || ('Problem ' + num), kingdom: state.currentKingdom || '未知'});
         if (state.currentMode === 'adventure') {
           const currentStage = ADVENTURE_STAGES.find(s => s.number === parseInt(num));
           if (currentStage && currentStage.stage === state.adventureStage) {
@@ -6098,15 +6108,18 @@ function openTavern() {
   if (state.solvedProblems.length === 0) {
     list.innerHTML = '<div class="tavern-empty">🏮 你还没有击败任何敌人，冒险者。<br>快去王国中挑战吧！</div>';
   } else {
-    // 纯数字列表 — 题目详情在点击后从 API 实时获取
-    list.innerHTML = state.solvedProblems.map(num => {
-      const enemy = '👾';
+    list.innerHTML = state.solvedProblems.map(function(entry) {
+      var id = typeof entry === 'object' ? entry.id : entry;
+      var title = (typeof entry === 'object' && entry.title) ? entry.title : ('Problem ' + id);
+      var kingdom = (typeof entry === 'object' && entry.kingdom) ? entry.kingdom : '未知';
+      var emojis = {Easy:'👾',Medium:'🐺',Hard:'🐉'};
+      var enemy = emojis[entry.difficulty] || '👾';
       return `
-        <div class="tavern-item" onclick="enterBattle(${num}, state.currentKingdom || 'datastruct'); closeTavern();">
+        <div class="tavern-item" onclick="enterBattle(${id}, state.currentKingdom || 'datastruct'); closeTavern();">
           <span class="enemy-icon">${enemy}</span>
-          <span class="problem-id">#${num}</span>
-          <span class="problem-name">Problem ${num}</span>
-          <span class="kingdom-tag">🏰 点击重温</span>
+          <span class="problem-id">#${id}</span>
+          <span class="problem-name">${escapeHtml(title)}</span>
+          <span class="kingdom-tag">🏰 ${escapeHtml(kingdom)}</span>
         </div>
       `;
     }).join('');
@@ -6279,10 +6292,10 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
 
     // ===========================================
-    // AUTO LOGIN CHECK — show auth modal on load
+    // AUTO LOGIN CHECK — 不强制弹窗，用户主动点击HUD登录按钮
     // ===========================================
     if (!App.isLoggedIn()) {
-      setTimeout(function() { showAuth(); }, 600);
+      // 不自动弹出登录框，让用户主动点 HUD 栏「登录」按钮
     }
 
     // ===========================================
