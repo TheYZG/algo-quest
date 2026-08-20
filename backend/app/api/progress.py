@@ -22,6 +22,7 @@ from app.schemas.all import (
 from app.services.auth import get_current_user
 from app.services.problems import get_problem_detail
 from app.services.test_cases import get_test_cases
+from app.graph.graph import build_judge_graph
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/progress", tags=["进度"])
@@ -111,6 +112,18 @@ async def _get_reference_solution(
     return reference, title, description
 
 
+# 模块级缓存：判题子图单例（无 checkpointer，判题无需跨请求记忆）
+_judge_graph_instance = None
+
+
+def get_judge_graph():
+    """获取判题子图单例"""
+    global _judge_graph_instance
+    if _judge_graph_instance is None:
+        _judge_graph_instance = build_judge_graph()
+    return _judge_graph_instance
+
+
 async def _ai_evaluate(
     problem_id: str,
     problem_title: str,
@@ -125,9 +138,6 @@ async def _ai_evaluate(
         (status, test_results, result_message, ai_detail)
         ai_detail: {"analysis": str, "issues": list, "suggestions": list, "comparison": str}
     """
-    from app.services.judge import ai_judge, JudgeResult
-    from app.services.llm import LLMServiceError
-
     ai_detail = {
         "analysis": "",
         "issues": [],
@@ -151,47 +161,57 @@ async def _ai_evaluate(
         f"code_len={len(code)} ref_len={len(reference)} desc_len={len(description)}"
     )
 
+    # ── 议会判题子图：Judge → (条件) Reviewer → (条件) Arbitrate ──
+    graph = get_judge_graph()
+    graph_input = {
+        "messages": [],
+        "user_id": "submit",
+        "problem_id": str(problem_id),
+        "user_code": code,
+        "language": language,
+        "intent": "judging",
+        "pinned_level": None,
+        "current_agent": None,
+        "task_brief": "评审用户提交的代码",
+        "agent_outputs": {},
+        "judge_result": None,
+        "review_verdict": None,
+        "needs_review": False,
+        "final_reply": "",
+        "timeline": [],
+        "coins_to_spend": 0,
+    }
     try:
-        result: JudgeResult = await ai_judge(
-            problem_title=final_title,
-            problem_description=description,
-            reference_solution=reference,
-            user_code=code,
-            language=language,
-        )
-    except LLMServiceError as e:
-        logger.error(f"AI 判题失败: {e}")
+        result = await graph.ainvoke(graph_input)
+        judge = result["judge_result"]
+        correct = judge.get("correct", False)
+        status = "accepted" if correct else "wrong_answer"
+        result_msg = "✅ AI 判断：代码正确" if correct else "❌ AI 判断：代码存在问题"
+        ai_detail = {
+            "analysis": judge.get("analysis", ""),
+            "issues": judge.get("issues", []),
+            "suggestions": judge.get("suggestions", []),
+            "comparison": judge.get("comparison", ""),
+            "confidence": judge.get("confidence", 0.0),
+            "execution_mode": "ai",
+            "reviewed": judge.get("reviewed", False),
+            "arbitrated": judge.get("arbitrated", False),
+            "timeline": result.get("timeline") or [],
+        }
+    except Exception as e:
+        logger.error(f"议会判题失败: {e}")
         ai_detail["analysis"] = f"AI 判题服务暂时不可用：{e}"
         return ("accepted", [], "AI 判题失败，默认通过", ai_detail)
 
-    # 构建结果
-    status = "accepted" if result.correct else "wrong_answer"
-    result_msg = "✅ AI 判断：代码正确" if result.correct else "❌ AI 判断：代码存在问题"
-
-    ai_detail = {
-        "analysis": result.analysis,
-        "issues": result.issues,
-        "suggestions": result.suggestions,
-        "comparison": result.comparison,
-        "confidence": result.confidence,
-        "execution_mode": "ai",
-    }
-
-    # 构建 test_results 格式（前端兼容）
     test_results = [{
-        "passed": result.correct,
-        "input": "AI 综合分析",
+        "passed": correct,
+        "input": "AI 综合分析" + ("（含复核）" if ai_detail["reviewed"] else ""),
         "expected": "算法正确 + 时间复杂度合理",
-        "actual": "✅ " + result.analysis[:100] if result.correct else "❌ " + (result.issues[0] if result.issues else result.analysis[:100]),
+        "actual": "✅ " + ai_detail["analysis"][:100] if correct
+                  else "❌ " + (ai_detail["issues"][0] if ai_detail["issues"] else ai_detail["analysis"][:100]),
         "error": "",
         "runtime_ms": 0.0,
     }]
-
-    logger.info(
-        f"AI 判题完成: correct={result.correct} confidence={result.confidence:.2f} "
-        f"issues={len(result.issues)} analysis_len={len(result.analysis)}"
-    )
-
     return (status, test_results, result_msg, ai_detail)
 
 
