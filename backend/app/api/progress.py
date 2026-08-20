@@ -270,7 +270,8 @@ async def submit_solution(
                 )
             )
         )
-        first_ac = check_result.scalar_one_or_none() is None
+        # 同题多次 AC 时会有多行，取首行判断是否首次 AC
+        first_ac = check_result.scalars().first() is None
 
         if first_ac:
             problem = await get_problem_detail(db, request.problem_id)

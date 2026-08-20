@@ -58,7 +58,11 @@ def _base_graph_input(request, user: User, pinned_level: str | None) -> dict:
             messages.append(AIMessage(content=h.get("content", "")))
         else:
             messages.append(HumanMessage(content=h.get("content", "")))
-    messages.append(HumanMessage(content=request.message))
+    # AssistantRequest 带 message；HintRequest 无，按帮助级别合成请求语义
+    message = getattr(request, "message", None) or (
+        f"请给我这道题「{getattr(request, 'level', 'hint')}」级别的帮助"
+    )
+    messages.append(HumanMessage(content=message))
 
     problem_context = getattr(request, "problem_context", None) or {}
     return {
