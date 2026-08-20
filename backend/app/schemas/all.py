@@ -138,6 +138,8 @@ class AssistantResponse(BaseModel):
     coins_spent: int = 0
     coins_remaining: int = 0
     related_problems: Optional[list[ProblemBrief]] = None
+    timeline: Optional[list[dict]] = None          # 协作时间线事件流
+    agents_involved: Optional[list[str]] = None    # 参与协作的 Agent id 列表
 
 
 # ============================================================
