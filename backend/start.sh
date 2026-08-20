@@ -38,8 +38,8 @@ if stats['count'] == 0:
 
 echo ""
 echo "[INFO] Starting FastAPI server..."
-echo "       Docs: http://localhost:8000/api/docs"
-echo "       Health: http://localhost:8000/api/health"
+echo "       Docs: http://localhost:8787/api/docs"
+echo "       Health: http://localhost:8787/api/health"
 echo ""
 
-$UVICORN app.main:app --host 0.0.0.0 --port 8000 --reload
+$UVICORN app.main:app --host 0.0.0.0 --port 8787 --reload

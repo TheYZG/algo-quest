@@ -840,6 +840,32 @@ body.resizing * { cursor: col-resize !important; }
   padding: 24px; overflow-y: auto;
   animation: fadeIn 0.3s var(--ease);
 }
+/* AI 精灵主动提示弹窗 */
+.ai-nudge-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .25s var(--ease);
+}
+.ai-nudge-overlay.show { opacity: 1; pointer-events: auto; }
+.ai-nudge-modal {
+  background: var(--surface); border: 2px solid var(--accent);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+  max-width: 420px; width: 90%; padding: 28px 26px;
+  text-align: center; animation: fadeIn .3s var(--ease);
+}
+.ai-nudge-icon { font-size: 44px; margin-bottom: 10px; }
+.ai-nudge-title { font-family: var(--font-heading); font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.ai-nudge-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 22px; line-height: 1.5; }
+.ai-nudge-actions { display: flex; gap: 12px; justify-content: center; }
+.ai-nudge-btn {
+  padding: 10px 20px; border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all .2s var(--ease); border: 1px solid var(--border); background: var(--card); color: var(--text);
+}
+.ai-nudge-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+.ai-nudge-btn.accept { background: var(--accent); color: #fff; border-color: var(--accent); }
+.ai-nudge-btn.accept:hover { box-shadow: 0 6px 18px rgba(255,107,107,.3); }
 .tavern-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 20px; padding-bottom: 12px;
@@ -1797,6 +1823,21 @@ body.light-theme .sr-tag { background: rgba(255,107,107,0.04); border-color: rgb
       <span class="tavern-count" id="tavernCount"></span>
     </div>
     <div id="tavernList" class="tavern-list"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     AI 精灵主动提示弹窗
+     ============================================================ -->
+<div class="ai-nudge-overlay" id="aiNudgeModal">
+  <div class="ai-nudge-modal">
+    <div class="ai-nudge-icon" id="aiNudgeIcon">💡</div>
+    <div class="ai-nudge-title" id="aiNudgeTitle">需要算法精灵的提示吗？</div>
+    <div class="ai-nudge-desc" id="aiNudgeDesc"></div>
+    <div class="ai-nudge-actions">
+      <button class="ai-nudge-btn accept" id="aiNudgeAccept">需要</button>
+      <button class="ai-nudge-btn" onclick="dismissAiNudge()">不用了</button>
+    </div>
   </div>
 </div>
 
@@ -5070,7 +5111,7 @@ function renderSearchResults(query, data) {
     var titleEn = p.title_cn ? (p.title || '') : '';
     var number = p.number || p.id;
 
-    html += '<div class="sr-card" onclick="viewProblemFromSearch(\'' + escapeSearchHtml(String(number)) + '\')">'
+    html += '<div class="sr-card" onclick="viewProblemFromSearch(\'' + escapeSearchHtml(String(number)) + '\', \'' + escapeSearchHtml(p.kingdom || '') + '\')">'
          + '<div class="sr-number">#' + number + '<br><span style="font-size:10px;color:var(--accent-hover)">' + relPercent + '%</span></div>'
          + '<div class="sr-body">'
          + '<div class="sr-title">' + escapeSearchHtml(title) + (titleEn ? ' <span style="font-weight:400;color:var(--text-dim);font-size:13px;">(' + escapeSearchHtml(titleEn) + ')</span>' : '') + '</div>'
@@ -5085,10 +5126,11 @@ function renderSearchResults(query, data) {
   resultsDiv.innerHTML = html;
 }
 
-function viewProblemFromSearch(problemNumber) {
+function viewProblemFromSearch(problemNumber, kingdomName) {
   var num = parseInt(problemNumber, 10);
   if (!isNaN(num)) {
-    enterBattle(num);
+    var kingdomId = kingdomName ? kingdomNameToId(kingdomName) : (state.currentKingdom || null);
+    enterBattle(num, kingdomId, 'search');
   }
 }
 
@@ -5224,17 +5266,19 @@ function enterPlaylist(playlistId) {
   renderPlaylistDetail(playlistId);
 }
 
-function enterBattle(problemNumber, sourceKingdomId) {
+function enterBattle(problemNumber, sourceKingdomId, source) {
   // Use sourceKingdomId if provided, else try current state
   let kingdomId = sourceKingdomId || state.currentKingdom || 'datastruct';
   state.currentKingdom = kingdomId;
   state.currentLevel = String(problemNumber);
   state.currentLevelTitle = null;  // 将在 renderBattleArena 中从 API 获取
   state.currentLanguage = 'python';
+  state.battleSource = source || 'kingdom';  // 'search' | 'kingdom'
   showScreen('screenBattle');
   renderBattleArena(problemNumber);
   updateHUD();
   updateAiPanelVisibility();
+  resetAiNudge();  // 启动算法精灵主动提示计时
 
   // Reset console
   document.getElementById('consolePanel').classList.remove('show');
@@ -5249,6 +5293,12 @@ function enterBattle(problemNumber, sourceKingdomId) {
 }
 
 function flee() {
+  clearAiNudge();  // 离开战斗时停止精灵提示计时
+  // 从 AI 搜索进入的题目，返回其所属王国关卡列表（而非搜索界面）
+  if (state.battleSource === 'search') {
+    enterKingdom(state.currentKingdom);
+    return;
+  }
   if (state.currentMode === 'adventure') {
     switchToCurrentModeScreen();
   } else if (state.currentPlaylistId) {
@@ -6017,6 +6067,7 @@ async function attack() {
         }
         saveState();
         updateHUD();
+        clearAiNudge();  // 胜利后停止精灵提示计时
 
         setTimeout(() => {
           btns.forEach(b => b.disabled = false);
@@ -6033,6 +6084,7 @@ async function attack() {
         document.getElementById('enemyBar').style.animation = '';
         btns.forEach(b => b.disabled = false);
       }, 500);
+      onBattleFail();  // 记录错误次数并触发算法精灵主动提示
     }
   } catch (e) {
     // 后端不可用时回退到本地模拟
@@ -6098,6 +6150,7 @@ function fallbackMockAttack(btns, num, levelInfo, title, language, code) {
       document.getElementById('enemyBar').style.animation = 'shake 0.5s ease';
       setTimeout(() => { document.getElementById('enemyBar').style.animation = ''; btns.forEach(b => b.disabled = false); }, 500);
     }, 500);
+    onBattleFail();  // 离线模式也记录错误次数
   }
 }
 
@@ -6523,6 +6576,97 @@ document.addEventListener('keydown', function(e) {
     handleAuth();
   }
 });
+
+// ============================================================
+// ============================================================
+// AI 精灵主动提示 — 卡顿检测
+// ============================================================
+function kingdomNameToId(name) {
+  const kingdoms = window._loadedKingdoms || [];
+  for (const k of kingdoms) if (k.name === name) return k.id;
+  for (const k of kingdoms) {
+    if (name && (name.indexOf(k.name) >= 0 || k.name.indexOf(name) >= 0)) return k.id;
+  }
+  return 'datastruct';
+}
+
+function resetAiNudge() {
+  if (state.aiNudge && state.aiNudge.timer) clearInterval(state.aiNudge.timer);
+  state.aiNudge = { errors: 0, startTime: Date.now(), promptedLevels: [], timer: null };
+  state.aiNudge.timer = setInterval(checkAiNudge, 30000);   // 每 30s 检查停留时间
+  setTimeout(checkAiNudge, 60000);                          // 60s 后首次轻提示
+}
+
+function clearAiNudge() {
+  if (state.aiNudge && state.aiNudge.timer) clearInterval(state.aiNudge.timer);
+  state.aiNudge = null;
+}
+
+function onBattleFail() {
+  if (!state.aiNudge) return;
+  state.aiNudge.errors += 1;
+  checkAiNudge();
+}
+
+// 错误次数 / 停留时间 → 提示级别（越高越高级）
+// 1=提示(hint) 2=引导(guide) 3=详解(explain)
+function computeNudgeLevel() {
+  const n = state.aiNudge;
+  const elapsed = (Date.now() - n.startTime) / 1000;
+  if (n.errors >= 5 || elapsed >= 360) return 3;
+  if (n.errors >= 3 || elapsed >= 180) return 2;
+  if (n.errors >= 1 || elapsed >= 60) return 1;
+  return 0;
+}
+
+function checkAiNudge() {
+  if (!state.aiNudge) return;
+  if (!App.isLoggedIn()) return;   // 未登录不主动提示（帮助需登录）
+  const level = computeNudgeLevel();
+  if (level === 0) return;
+  if (state.aiNudge.promptedLevels.indexOf(level) >= 0) return;  // 该级别已提示过
+  showAiNudgeModal(level);
+}
+
+const AI_NUDGE_LABELS = {
+  1: { key: 'hint',   name: '思路提示', icon: '💡', cost: '1💰', desc: '你在这道题卡了一会儿，要算法精灵给一点点方向吗？不破坏思考乐趣。' },
+  2: { key: 'guide',  name: '部分引导', icon: '🗺️', cost: '3💰', desc: '还是没思路？精灵带你走一半，剩下靠自己攻克。' },
+  3: { key: 'explain', name: '详细解析', icon: '📖', cost: '5💰', desc: '卡了很久啦，来看看完整解法与代码，彻底搞懂这道题。' }
+};
+
+function showAiNudgeModal(level) {
+  const info = AI_NUDGE_LABELS[level];
+  const modal = document.getElementById('aiNudgeModal');
+  if (!modal || !info) return;
+  document.getElementById('aiNudgeIcon').textContent = info.icon;
+  document.getElementById('aiNudgeTitle').textContent = '需要算法精灵的「' + info.name + '」吗？';
+  document.getElementById('aiNudgeDesc').textContent = info.desc;
+  const accept = document.getElementById('aiNudgeAccept');
+  accept.textContent = '需要 · ' + info.name + ' ' + info.cost;
+  accept.onclick = function() {
+    state.aiNudge.promptedLevels.push(level);
+    closeAiNudgeModal();
+    toggleAiPanel();
+    requestAIHelp(info.key);
+  };
+  modal.classList.add('show');
+}
+
+function closeAiNudgeModal() {
+  const modal = document.getElementById('aiNudgeModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function dismissAiNudge() {
+  // 用户选"不用了"：标记该级别已提示，下次需更高卡顿才再弹
+  if (state.aiNudge) {
+    const level = computeNudgeLevel();
+    if (level > 0 && state.aiNudge.promptedLevels.indexOf(level) < 0) {
+      state.aiNudge.promptedLevels.push(level);
+    }
+  }
+  closeAiNudgeModal();
+}
 
 // ============================================================
 // AI ASSISTANT — 精灵卡片
