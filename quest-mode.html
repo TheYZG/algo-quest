@@ -1739,6 +1739,26 @@ body.light-theme .sr-tag { background: rgba(255,107,107,0.04); border-color: rgb
   border-left: 3px solid var(--accent); padding: 4px 10px;
   margin: 6px 0; color: var(--text-dim); font-style: italic;
 }
+/* ═══ 议会协作时间线 ═══ */
+.agent-timeline { display: flex; flex-direction: column; gap: 6px; margin: 2px 0; }
+.agent-tl-card {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim);
+  animation: agentTlIn .25s ease;
+}
+.agent-tl-card.done { opacity: .85; }
+.agent-tl-avatar { font-size: 16px; line-height: 1; }
+.agent-tl-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.agent-tl-name { font-weight: 600; color: var(--text); font-size: 12px; }
+.agent-tl-action { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes agentTlIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .agent-tl-card { animation: none; } }
+/* Light 主题适配 */
+body.light-theme .agent-tl-card { background: #fff; border-color: #e5e7eb; }
+body.light-theme .agent-tl-name { color: #1f2937; }
+body.light-theme .agent-tl-action { color: #6b7280; }
 .ai-help-row { display: flex; gap: 6px; padding: 8px 0; }
 .ai-help-btn {
   flex: 1; padding: 6px 8px;
@@ -6793,6 +6813,15 @@ function renderMarkdown(text) {
   return html;
 }
 
+const AGENT_META = {
+  queen:    { name: '精灵女王', emoji: '👑' },
+  tutor:    { name: '导师',     emoji: '🎓' },
+  judge:    { name: '判题官',   emoji: '⚖️' },
+  scout:    { name: '侦察兵',   emoji: '🔭' },
+  planner:  { name: '军师',     emoji: '🗺️' },
+  reviewer: { name: '复核官',   emoji: '🛡️' },
+};
+
 async function sendAiMessage() {
   const input = document.getElementById('aiInput');
   const msg = input.value.trim();
@@ -6804,16 +6833,48 @@ async function sendAiMessage() {
 
   const pid = state.currentLevel ? String(state.currentLevel).padStart(4, '0') : null;
 
+  // 议会时间线容器（先建占位，事件流逐个渲染）
+  const body = document.getElementById('aiDialogBody');
+  const tl = document.createElement('div');
+  tl.className = 'agent-timeline';
+  body.appendChild(tl);
+
   try {
-    const result = await App.askAssistant(msg, pid);
-    addAiMessage('assistant', result.reply);
-    if (result.coinsRemaining !== undefined) {
-      App.user.coins = result.coinsRemaining;
-      updateHUD();
-    }
+    await ApiClient.assistant.chatStream(msg, pid, (ev) => {
+      if (ev.type === 'timeline') {
+        renderAgentTimelineEvent(tl, ev);
+      } else if (ev.type === 'final') {
+        addAiMessage('assistant', ev.message);
+        tl.remove();
+        if (ev.coins_remaining !== undefined) {
+          App.user.coins = ev.coins_remaining;
+          updateHUD();
+        }
+      } else if (ev.type === 'error') {
+        addAiMessage('assistant', '⚠️ ' + (ev.detail || '议会暂时不可用'));
+        tl.remove();
+      }
+    });
   } catch (e) {
+    tl.remove();
     addAiMessage('assistant', '⚠️ ' + (e.message || '对话失败'));
   }
+}
+
+function renderAgentTimelineEvent(container, ev) {
+  const meta = AGENT_META[ev.agent] || { name: ev.agent, emoji: '🤖' };
+  const card = document.createElement('div');
+  card.className = 'agent-tl-card' + (ev.type === 'agent_done' ? ' done' : '');
+  const dur = ev.duration_ms != null ? ` · ${(ev.duration_ms / 1000).toFixed(1)}s` : '';
+  card.innerHTML =
+    '<span class="agent-tl-avatar">' + meta.emoji + '</span>' +
+    '<span class="agent-tl-body">' +
+      '<span class="agent-tl-name">' + meta.name + '</span>' +
+      '<span class="agent-tl-action">' + (ev.action || '') + dur + '</span>' +
+    '</span>';
+  container.appendChild(card);
+  const body = document.getElementById('aiDialogBody');
+  body.scrollTop = body.scrollHeight;
 }
 
 function addAiMessage(role, content, level) {

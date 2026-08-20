@@ -136,6 +136,40 @@ var ApiClient = {
                 history,
             });
         },
+
+        // SSE 流式对话 — onEvent({type: 'timeline'|'final'|'error', ...})
+        async chatStream(message, problemId, onEvent) {
+            const token = ApiClient.getToken();
+            const resp = await fetch(`${window.API_BASE}/assistant/chat/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ message, problem_id: problemId }),
+            });
+            if (!resp.ok) {
+                let detail = '请求失败';
+                try { detail = (await resp.json()).detail || detail; } catch (e) {}
+                throw new Error(detail);
+            }
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                let idx;
+                while ((idx = buf.indexOf('\n\n')) >= 0) {
+                    const chunk = buf.slice(0, idx);
+                    buf = buf.slice(idx + 2);
+                    const line = chunk.split('\n').find(l => l.startsWith('data:'));
+                    if (!line) continue;
+                    try { onEvent(JSON.parse(line.slice(5))); } catch (e) {}
+                }
+            }
+        },
         getHint(problem_id, level = 'hint') {
             return ApiClient.request('POST', '/assistant/hint', { problem_id, level });
         },
