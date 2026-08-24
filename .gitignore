@@ -32,3 +32,12 @@ resume-output/
 
 # Node (if any)
 node_modules/
+
+# doocs/leetcode 第三方数据集（98MB，不入库）
+solution/
+
+# 本地工作目录
+.workbuddy/
+
+# 个人简历（含隐私信息）
+*简历*
